@@ -136,9 +136,9 @@ async def health_check():
     }
 
 
-# 后续 Sprint 将注册 v1 路由:
-# from app.api.v1.router import api_router
-# app.include_router(api_router, prefix="/api/v1")
+# 注册 v1 API 路由
+from app.api.v1.router import api_router
+app.include_router(api_router)
 
 
 if __name__ == "__main__":
