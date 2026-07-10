@@ -1,7 +1,8 @@
 """认证与知识库模块单元测试"""
 
 import pytest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
+from uuid import UUID, uuid4
 
 from app.services.auth_service import AuthService
 from app.services.kb_service import KBService
@@ -59,7 +60,39 @@ class TestAuthService:
             await service.login("bad@example.com", "password")
 
 
-@pytest.mark.unit
+    @pytest.mark.asyncio
+    @patch("app.services.auth_service.verify_password")
+    @patch("app.services.auth_service.create_access_token")
+    @patch("app.services.auth_service.create_refresh_token")
+    async def test_login_success(self, mock_refresh, mock_access, mock_verify, db_session):
+        """测试：登录成功"""
+
+        mock_access.return_value = "access_token_xxx"
+        mock_refresh.return_value = "refresh_token_xxx"
+        mock_verify.return_value = True
+
+        mock_user = AsyncMock()
+        mock_user.id = UUID('12345678-1234-1234-1234-123456789abc')
+        mock_user.username = "testuser"
+        mock_user.email = "test@example.com"
+        mock_user.display_name = "测试"
+        mock_user.role = MagicMock(value="user")
+        mock_user.is_active = True
+        mock_user.hashed_password = "hashed_pw"
+
+        user_repo = AsyncMock()
+        user_repo.find_by_email.return_value = mock_user
+        user_repo.update_last_login = AsyncMock()
+
+        service = AuthService(user_repo)
+        result = await service.login("test@example.com", "correct_pw")
+
+        assert result["access_token"] == "access_token_xxx"
+        assert result["refresh_token"] == "refresh_token_xxx"
+        assert result["token_type"] == "bearer"
+        assert result["user"]["username"] == "testuser"
+
+
 class TestKBService:
     """知识库服务测试"""
 
@@ -99,6 +132,18 @@ class TestKBService:
         service = KBService(kb_repo)
         with pytest.raises(Exception):  # ValidationException
             await service.create(name="测试", owner_id=uuid4(), chunk_size=100)
+
+    @pytest.mark.asyncio
+    async def test_get_detail_not_found(self, db_session):
+        """测试：获取不存在的知识库详情"""
+        from uuid import uuid4
+
+        kb_repo = AsyncMock()
+        kb_repo.find_by_id.return_value = None
+
+        service = KBService(kb_repo)
+        with pytest.raises(NotFoundException):
+            await service.get_detail(kb_id=uuid4(), user_id=uuid4())
 
     @pytest.mark.asyncio
     async def test_delete_kb_not_found(self, db_session):
