@@ -1,0 +1,149 @@
+# ============================================================
+# 生产环境 Docker Compose
+# ============================================================
+# 启动命令:
+#   docker compose -f docker-compose.prod.yml up -d
+# 构建+启动:
+#   docker compose -f docker-compose.prod.yml up -d --build
+# 停止命令:
+#   docker compose -f docker-compose.prod.yml down
+# ============================================================
+
+services:
+  # ===== PostgreSQL 16 + pgvector =====
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: rag-postgres-prod
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=raguser
+      - POSTGRES_PASSWORD=ragpassword
+      - POSTGRES_DB=ragdb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U raguser -d ragdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - rag-network
+
+  # ===== Qdrant 向量数据库 =====
+  qdrant:
+    image: qdrant/qdrant:v1.9.0
+    container_name: rag-qdrant-prod
+    restart: unless-stopped
+    volumes:
+      - qdrant_data:/qdrant/storage
+    healthcheck:
+      test: ["CMD-SHELL", "exit 0"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - rag-network
+
+  # ===== Redis 缓存 + 消息队列 =====
+  redis:
+    image: redis:7-alpine
+    container_name: rag-redis-prod
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - rag-network
+
+  # ===== 数据库迁移（一次性） =====
+  migration:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: rag-migration
+    command: ["alembic", "upgrade", "head"]
+    env_file:
+      - backend/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - rag-network
+
+  # ===== FastAPI 后端 =====
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    image: rag-api:latest
+    container_name: rag-api-prod
+    restart: unless-stopped
+    env_file:
+      - backend/.env
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+      migration:
+        condition: service_completed_successfully
+    networks:
+      - rag-network
+
+  # ===== Worker（文档后台处理） =====
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.worker
+    image: rag-worker:latest
+    container_name: rag-worker-prod
+    restart: unless-stopped
+    env_file:
+      - backend/.env
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+      migration:
+        condition: service_completed_successfully
+    networks:
+      - rag-network
+
+  # ===== Nginx 反向代理 + 前端 =====
+  nginx:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    image: rag-frontend:latest
+    container_name: rag-nginx-prod
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+    networks:
+      - rag-network
+
+volumes:
+  postgres_data:
+  qdrant_data:
+  redis_data:
+  uploads_data:
+
+networks:
+  rag-network:
+    driver: bridge

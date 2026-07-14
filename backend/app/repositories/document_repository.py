@@ -27,10 +27,11 @@ class DocumentRepository:
         content_hash: str | None = None,
     ) -> Document:
         """创建文档记录"""
+        from app.models.database.document import DocType
         doc = Document(
             kb_id=kb_id,
             title=title,
-            file_type=file_type,
+            file_type=DocType(file_type) if isinstance(file_type, str) else file_type,
             file_size=file_size,
             file_path=file_path,
             content_hash=content_hash,

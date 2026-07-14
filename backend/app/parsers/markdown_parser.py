@@ -12,7 +12,7 @@ class MarkdownParser(BaseParser):
 
     @property
     def supported_formats(self) -> list[str]:
-        return ["text/markdown", "text/x-markdown"]
+        return ["text/markdown", "text/x-markdown", "text/md"]
 
     def parse(self, file_path: str | Path) -> str:
         """读取 Markdown 文件内容（不修改原始格式）"""

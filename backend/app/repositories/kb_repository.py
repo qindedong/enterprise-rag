@@ -8,7 +8,7 @@ from uuid import UUID
 
 from sqlalchemy import func, select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import selectinload
 
 from app.models.database.knowledge_base import KnowledgeBase, KBMember, KBStatus, MemberRole
 
@@ -42,10 +42,18 @@ class KBRepository:
         return kb
 
     async def find_by_id(self, kb_id: UUID) -> KnowledgeBase | None:
+        """按 ID 查找知识库"""
+        result = await self.session.execute(
+            select(KnowledgeBase)
+            .where(KnowledgeBase.id == kb_id, KnowledgeBase.status != KBStatus.DELETED)
+        )
+        return result.scalar_one_or_none()
+
+    async def find_by_id_with_owner(self, kb_id: UUID) -> KnowledgeBase | None:
         """按 ID 查找知识库（包含 owner）"""
         result = await self.session.execute(
             select(KnowledgeBase)
-            .options(joinedload(KnowledgeBase.owner))
+            .options(selectinload(KnowledgeBase.owner))
             .where(KnowledgeBase.id == kb_id, KnowledgeBase.status != KBStatus.DELETED)
         )
         return result.unique().scalar_one_or_none()
@@ -79,7 +87,6 @@ class KBRepository:
         # 分页查询
         query = (
             select(KnowledgeBase)
-            .options(joinedload(KnowledgeBase.owner))
             .where(and_(*conditions))
             .order_by(KnowledgeBase.updated_at.desc())
             .offset((page - 1) * page_size)
@@ -160,7 +167,7 @@ class KBRepository:
         """获取知识库所有成员"""
         result = await self.session.execute(
             select(KBMember)
-            .options(joinedload(KBMember.user))
+            .options(selectinload(KBMember.user))
             .where(KBMember.kb_id == kb_id)
         )
         return list(result.unique().scalars().all())
@@ -172,3 +179,41 @@ class KBRepository:
             return True
         member = await self.get_member(kb_id, user_id)
         return member is not None
+
+    async def find_by_id_simple(self, kb_id: UUID) -> KnowledgeBase | None:
+        """按 ID 查找知识库（不加载关联关系，避免 MissingGreenlet）"""
+        result = await self.session.execute(
+            select(KnowledgeBase).where(
+                KnowledgeBase.id == kb_id,
+                KnowledgeBase.status != KBStatus.DELETED,
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def get_document_count(self, kb_id: UUID) -> int:
+        """获取知识库文档数量"""
+        from app.models.database.document import Document, DocStatus
+        result = await self.session.execute(
+            select(func.count()).where(
+                Document.kb_id == kb_id,
+                Document.status != DocStatus.DELETED,
+            )
+        )
+        return result.scalar() or 0
+
+    async def get_chunk_count(self, kb_id: UUID) -> int:
+        """获取知识库分块数量"""
+        from app.models.database.document import DocumentChunk
+        result = await self.session.execute(
+            select(func.count()).where(
+                DocumentChunk.kb_id == kb_id,
+            )
+        )
+        return result.scalar() or 0
+
+    async def count_members(self, kb_id: UUID) -> int:
+        """统计知识库成员数量"""
+        result = await self.session.execute(
+            select(func.count()).where(KBMember.kb_id == kb_id)
+        )
+        return result.scalar() or 0

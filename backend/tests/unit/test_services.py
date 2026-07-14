@@ -139,7 +139,7 @@ class TestKBService:
         from uuid import uuid4
 
         kb_repo = AsyncMock()
-        kb_repo.find_by_id.return_value = None
+        kb_repo.find_by_id_with_owner.return_value = None
 
         service = KBService(kb_repo)
         with pytest.raises(NotFoundException):

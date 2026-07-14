@@ -1,0 +1,55 @@
+﻿FROM python:3.13-slim AS builder
+
+WORKDIR /install
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libffi-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY pyproject.toml /tmp/pyproject.toml
+
+RUN pip install --no-cache-dir --prefix=/install \
+    fastapi \
+    uvicorn[standard] \
+    sqlalchemy[asyncio] \
+    asyncpg \
+    alembic \
+    pydantic \
+    pydantic-settings \
+    "redis>=5.0.0,<6.0.0" \
+    httpx \
+    python-jose[cryptography] \
+    bcrypt \
+    sentence-transformers \
+    python-multipart \
+    "qdrant-client>=1.9.0,<1.11.0" \
+    openai \
+    tiktoken \
+    pymupdf \
+    langchain-text-splitters \
+    jieba
+
+# ===== 运行时 =====
+FROM python:3.13-slim AS runtime
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libffi8 \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /install /usr/local
+
+RUN useradd --create-home --shell /bin/bash appuser
+RUN mkdir -p /app/uploads /app/logs && chown -R appuser:appuser /app
+
+COPY --chown=appuser:appuser app/ ./app/
+COPY --chown=appuser:appuser migrations/ ./migrations/
+COPY --chown=appuser:appuser alembic.ini ./
+
+USER appuser
+
+# Worker 启动命令（从 Redis 队列取任务）
+CMD ["python", "-m", "app.worker"]

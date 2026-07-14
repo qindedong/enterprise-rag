@@ -72,7 +72,7 @@ class KBService:
 
     async def get_detail(self, kb_id: UUID, user_id: UUID) -> dict:
         """获取知识库详情（需权限校验）"""
-        kb = await self.kb_repo.find_by_id(kb_id)
+        kb = await self.kb_repo.find_by_id_with_owner(kb_id)
         if not kb:
             raise NotFoundException("知识库", str(kb_id))
 
@@ -80,7 +80,32 @@ class KBService:
         if not await self._can_access(kb_id, user_id):
             raise ForbiddenException("您没有该知识库的访问权限")
 
-        return self._to_detail_response(kb)
+        # 获取统计信息
+        doc_count = await self.kb_repo.get_document_count(kb_id)
+        chunk_count = await self.kb_repo.get_chunk_count(kb_id)
+        member_count = await self.kb_repo.count_members(kb_id)
+
+        return {
+            "id": str(kb.id),
+            "name": kb.name,
+            "description": kb.description,
+            "owner": {
+                "id": str(kb.owner.id) if kb.owner else None,
+                "display_name": kb.owner.display_name if kb.owner else None,
+            },
+            "chunk_size": kb.chunk_size,
+            "chunk_overlap": kb.chunk_overlap,
+            "embedding_model": kb.embedding_model,
+            "status": kb.status.value if kb.status else "active",
+            "stats": {
+                "document_count": doc_count,
+                "chunk_count": chunk_count,
+                "total_questions": 0,
+            },
+            "member_count": member_count,
+            "created_at": kb.created_at.isoformat() if kb.created_at else None,
+            "updated_at": kb.updated_at.isoformat() if kb.updated_at else None,
+        }
 
     async def update(self, kb_id: UUID, user_id: UUID, **kwargs) -> dict:
         """更新知识库（仅 owner 可更新）"""

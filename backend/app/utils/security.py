@@ -4,8 +4,8 @@
 
 from datetime import datetime, timedelta, timezone
 
+import bcrypt
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 
 from app.core.config import get_settings
 
@@ -13,17 +13,21 @@ settings = get_settings()
 
 # ===== 密码哈希 =====
 
-_pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 
 def hash_password(plain_password: str) -> str:
     """对明文密码进行 bcrypt 哈希"""
-    return _pwd_context.hash(plain_password)
+    # bcrypt 要求输入为 bytes，且长度不能超过 72 字节
+    password_bytes = plain_password.encode("utf-8")[:72]
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(password_bytes, salt)
+    return hashed.decode("utf-8")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """验证明文密码是否与哈希值匹配"""
-    return _pwd_context.verify(plain_password, hashed_password)
+    password_bytes = plain_password.encode("utf-8")[:72]
+    hashed_bytes = hashed_password.encode("utf-8")
+    return bcrypt.checkpw(password_bytes, hashed_bytes)
 
 
 # ===== JWT Token =====

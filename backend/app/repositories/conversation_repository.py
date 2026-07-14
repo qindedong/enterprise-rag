@@ -6,7 +6,7 @@ from uuid import UUID
 
 from sqlalchemy import func, select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import selectinload
 
 from app.models.database.conversation import Conversation, Message, ConvStatus, MsgFeedback
 
@@ -28,7 +28,7 @@ class ConversationRepository:
         """按 ID 查找"""
         result = await self.session.execute(
             select(Conversation)
-            .options(joinedload(Conversation.messages))
+            .options(selectinload(Conversation.messages))
             .where(Conversation.id == conv_id, Conversation.status != ConvStatus.ARCHIVED)
         )
         return result.unique().scalar_one_or_none()

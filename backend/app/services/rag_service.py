@@ -27,9 +27,14 @@ class RAGService:
         self.retrieval = retrieval_pipeline
         self.llm_client = llm_client
 
-    async def ask(self, question: str, kb_id: UUID) -> dict:
+    async def ask(self, question: str, kb_id: UUID, conversation_id: UUID | None = None) -> dict:
         """
         RAG 问答（非流式）
+
+        Args:
+            question: 用户问题
+            kb_id: 知识库 ID
+            conversation_id: 对话 ID（多轮对话）
 
         Returns:
             包含 answer, citations, token_usage, processing_time_ms 的字典
@@ -90,7 +95,7 @@ class RAGService:
             "processing_time_ms": elapsed,
         }
 
-    async def ask_stream(self, question: str, kb_id: UUID):
+    async def ask_stream(self, question: str, kb_id: UUID, conversation_id: UUID | None = None):
         """
         RAG 问答（流式 SSE）
 

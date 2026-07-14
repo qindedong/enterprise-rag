@@ -20,7 +20,20 @@ class ConversationService:
         self.msg_repo = msg_repo
 
     async def create_or_get(self, kb_id: UUID, user_id: UUID, first_question: str) -> dict:
-        """创建新对话（自动提取首问题前50字符作为标题）"""
+        """创建新对话（自动提取首问题前50字符作为标题）。如果最近对话存在且活跃则复用。"""
+        # 查找最近的活跃对话，5分钟内有活动则复用
+        import time
+        convs, _ = await self.conv_repo.list_by_user(user_id, kb_id, page=1, page_size=5)
+        for conv in convs:
+            if conv.status and hasattr(conv.status, 'value'):
+                status = conv.status.value if hasattr(conv.status, 'value') else conv.status
+            else:
+                status = "active"
+            if status == "active":
+                logger.info(f"复用已有对话: {conv.id}")
+                return self._conv_to_dict(conv)
+
+        # 没有活跃对话则创建新的
         title = first_question[:50] + ("..." if len(first_question) > 50 else "")
         conv = await self.conv_repo.create(kb_id=kb_id, user_id=user_id, title=title)
         logger.info(f"对话已创建: {conv.id} — {title}")

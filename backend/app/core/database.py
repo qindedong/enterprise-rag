@@ -39,6 +39,10 @@ class Base(DeclarativeBase):
     pass
 
 
+# 确保所有模型被导入（供 Alembic autogenerate 使用）
+import app.models.database  # noqa: E402, F811
+
+
 async def get_db() -> AsyncSession:
     """获取数据库会话（依赖注入用）
 

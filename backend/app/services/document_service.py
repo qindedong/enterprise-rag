@@ -5,6 +5,7 @@
 """
 
 import hashlib
+import json
 import os
 from datetime import datetime, timezone
 from pathlib import Path
@@ -17,7 +18,7 @@ from app.core.exceptions import NotFoundException, ValidationException, Duplicat
 from app.core.logger import get_logger
 from app.infrastructure.embedding_client import EmbeddingClient
 from app.infrastructure.qdrant_client import QdrantStore
-from app.models.database.document import DocStatus
+from app.models.database.document import DocStatus, DocType
 from app.parsers.registry import ParserRegistry
 from app.repositories.document_repository import ChunkRepository, DocumentRepository
 from app.utils.text_splitter import TextSplitter
@@ -32,6 +33,7 @@ ALLOWED_MIME_TYPES = {
     "text/markdown": "md",
     "text/x-markdown": "md",
     "text/plain": "txt",
+    "application/octet-stream": "txt",  # curl 上传 .txt 时可能识别为 octet-stream
 }
 
 
@@ -58,9 +60,12 @@ class DocumentService:
         content: bytes,
     ) -> dict:
         """
-        上传并处理文档
+        上传文档（异步模式）
 
-        流程：校验 → 去重 → 创建记录 → 解析 → 分块 → 向量化 → Qdrant
+        流程：校验 → 去重 → 保存文件 → 创建记录 → 推入 Redis 队列
+
+        Worker 会在后台异步完成解析→分块→向量化→Qdrant 的完整流程。
+        前端可通过 GET /documents/{doc_id} 轮询处理状态。
 
         Args:
             kb_id: 知识库 ID
@@ -69,13 +74,19 @@ class DocumentService:
             content: 文件字节内容
 
         Returns:
-            文档信息字典（含处理状态）
+            文档信息字典（初始状态为 pending）
 
         Raises:
             ValidationException: 文件类型不支持或大小超限
             DuplicateException: 相同内容的文档已存在
         """
         # 1. 文件校验
+        if mime_type not in ALLOWED_MIME_TYPES:
+            # 尝试根据文件扩展名推断
+            ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+            EXT_TO_MIME = {"pdf": "application/pdf", "md": "text/markdown", "txt": "text/plain", "markdown": "text/markdown"}
+            mime_type = EXT_TO_MIME.get(ext, mime_type)
+
         if mime_type not in ALLOWED_MIME_TYPES:
             raise ValidationException(
                 f"不支持的文件类型: {mime_type}。支持: PDF, Markdown, TXT"
@@ -108,17 +119,36 @@ class DocumentService:
 
         logger.info(f"文档记录已创建: {doc.id} ({filename}), 状态: pending")
 
-        # 5. 同步处理文档（MVP 阶段同步，后续改为异步 Worker）
+        # 5. 推入 Redis 队列（异步 Worker 处理）
         try:
-            await self._process_document(doc.id, kb_id, file_path, file_ext)
+            await self._enqueue_for_processing(doc.id, kb_id, file_path, file_ext)
+            logger.info(f"文档已推入处理队列: {doc.id}")
         except Exception as e:
-            logger.error(f"文档处理失败: {doc.id}, 原因: {e}", exc_info=True)
-            await self.doc_repo.update_status(doc.id, DocStatus.FAILED, error_message=str(e))
+            logger.error(f"推入队列失败: {doc.id}, 原因: {e}", exc_info=True)
+            await self.doc_repo.update_status(doc.id, DocStatus.FAILED, error_message=f"推入队列失败: {e}")
             raise ProcessingException(f"文档处理失败: {e}")
 
-        # 6. 返回文档信息
-        updated_doc = await self.doc_repo.find_by_id(doc.id)
-        return self._to_response(updated_doc)
+        # 6. 返回文档信息（状态为 pending）
+        return self._to_response(doc)
+
+    async def _enqueue_for_processing(self, doc_id: UUID, kb_id: UUID, file_path: str, file_ext: str) -> None:
+        """将文档处理任务推入 Redis 队列"""
+        import redis.asyncio as aioredis
+
+        try:
+            r = aioredis.from_url(settings.REDIS_URL, decode_responses=True)
+            task = json.dumps({
+                "doc_id": str(doc_id),
+                "kb_id": str(kb_id),
+                "file_path": file_path,
+                "file_type": file_ext,
+            })
+            await r.lpush("rag:doc_process_queue", task)
+            await r.aclose()
+        except Exception:
+            # Redis 不可用时降级为同步处理
+            logger.warning("Redis 不可用，降级为同步处理模式")
+            await self._process_document(doc_id, kb_id, file_path, file_ext)
 
     async def _process_document(self, doc_id: UUID, kb_id: UUID, file_path: str, file_ext: str) -> None:
         """处理文档：解析 → 分块 → 向量化 → 写入 Qdrant"""
@@ -260,13 +290,21 @@ class DocumentService:
         return self._to_response(updated)
 
     def _to_response(self, doc) -> dict:
+        """将 Document 对象转为 API 响应字典"""
+        # 兼容文件类型可能是 Enum 或者 str
+        ft = getattr(doc, 'file_type', None)
+        if ft is not None and hasattr(ft, 'value'):
+            ft = ft.value
+        st = getattr(doc, 'status', None)
+        if st is not None and hasattr(st, 'value'):
+            st = st.value
         return {
             "id": str(doc.id),
             "kb_id": str(doc.kb_id),
             "title": doc.title,
-            "file_type": doc.file_type.value if doc.file_type else None,
+            "file_type": ft,
             "file_size": doc.file_size,
-            "status": doc.status.value if doc.status else None,
+            "status": st,
             "chunk_count": doc.chunk_count or 0,
             "error_message": doc.error_message,
             "created_at": doc.created_at.isoformat() if doc.created_at else None,
