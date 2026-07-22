@@ -1,34 +1,190 @@
 @import "tailwindcss";
 
+/* ============================================
+ * 主题令牌：data-theme × data-mode 四组合
+ * 组件只使用语义工具类，不写具体色值
+ * 默认（无属性）= minimal + light
+ * ============================================ */
+
+:root {
+  --surface: #f8fafc;
+  --surface-raised: #ffffff;
+  --ink: #0f172a;
+  --ink-muted: #64748b;
+  --line: #e2e8f0;
+  --line-soft: #f1f5f9;
+  --accent: #2563eb;
+  --accent-ink: #ffffff;
+  --ok: #16a34a;
+  --ok-soft: #dcfce7;
+  --warn: #b45309;
+  --warn-soft: #fef3c7;
+  --err: #dc2626;
+  --err-soft: #fee2e2;
+  --info: #2563eb;
+  --info-soft: #dbeafe;
+  --display-font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --body-font: var(--display-font);
+  --radius: 10px;
+  --shadow: 0 1px 3px rgb(15 23 42 / 0.06);
+  --meta-tracking: 0.02em;
+}
+
+[data-theme='minimal'][data-mode='dark'] {
+  --surface: #0f172a;
+  --surface-raised: #1e293b;
+  --ink: #f1f5f9;
+  --ink-muted: #94a3b8;
+  --line: #334155;
+  --line-soft: #24304a;
+  --accent: #3b82f6;
+  --accent-ink: #ffffff;
+  --ok: #4ade80;
+  --ok-soft: rgb(74 222 128 / 0.12);
+  --warn: #fbbf24;
+  --warn-soft: rgb(251 191 36 / 0.12);
+  --err: #f87171;
+  --err-soft: rgb(248 113 113 / 0.12);
+  --info: #60a5fa;
+  --info-soft: rgb(96 165 250 / 0.12);
+  --radius: 10px;
+  --shadow: none;
+  --meta-tracking: 0.02em;
+}
+
+[data-theme='editorial'][data-mode='light'] {
+  --surface: #f7f3ec;
+  --surface-raised: #fffdf9;
+  --ink: #1a1a1a;
+  --ink-muted: #6b6255;
+  --line: #1a1a1a;
+  --line-soft: #d8d0c0;
+  --accent: #d43d2a;
+  --accent-ink: #f7f3ec;
+  --ok: #3d7a52;
+  --ok-soft: #e4ebdd;
+  --warn: #a36b1f;
+  --warn-soft: #f2e8d5;
+  --err: #d43d2a;
+  --err-soft: #f5ddd5;
+  --info: #3f5f8a;
+  --info-soft: #dde4ea;
+  --display-font: Georgia, "Songti SC", "STSong", "SimSun", "Noto Serif CJK SC", serif;
+  --body-font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --radius: 2px;
+  --shadow: none;
+  --meta-tracking: 0.18em;
+}
+
+[data-theme='editorial'][data-mode='dark'] {
+  --surface: #1a1815;
+  --surface-raised: #24211a;
+  --ink: #f2ede4;
+  --ink-muted: #a39a89;
+  --line: #4a4438;
+  --line-soft: #38322a;
+  --accent: #e85d4a;
+  --accent-ink: #1a1815;
+  --ok: #7fb08a;
+  --ok-soft: rgb(127 176 138 / 0.14);
+  --warn: #d9a75e;
+  --warn-soft: rgb(217 167 94 / 0.14);
+  --err: #e85d4a;
+  --err-soft: rgb(232 93 74 / 0.14);
+  --info: #7f9cc4;
+  --info-soft: rgb(127 156 196 / 0.14);
+  --display-font: Georgia, "Songti SC", "STSong", "SimSun", "Noto Serif CJK SC", serif;
+  --body-font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --radius: 2px;
+  --shadow: none;
+  --meta-tracking: 0.18em;
+}
+
+/* ===== 令牌 → Tailwind 语义工具类 ===== */
+@theme inline {
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-line: var(--line);
+  --color-line-soft: var(--line-soft);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-err: var(--err);
+  --color-err-soft: var(--err-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --font-display: var(--display-font);
+  --font-body: var(--body-font);
+  --radius-theme: var(--radius);
+  --shadow-theme: var(--shadow);
+  --tracking-meta: var(--meta-tracking);
+}
+
 /* ===== 基础样式 ===== */
 body {
-  @apply bg-gray-50 text-gray-900 antialiased;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  @apply bg-surface text-ink font-body antialiased;
   margin: 0;
 }
 
+/* ===== 可复用组件类 ===== */
+@layer components {
+  /* 卡片/面板/弹窗容器（editorial 下自动变为 2px 墨框锐角） */
+  .card {
+    @apply bg-surface-raised border border-line rounded-theme shadow-theme;
+  }
+
+  /* 主按钮 */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-accent text-accent-ink rounded-theme text-sm font-medium transition-all hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed;
+  }
+
+  /* 次要按钮 */
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm text-ink-muted rounded-theme transition-colors hover:bg-line-soft hover:text-ink;
+  }
+
+  /* 输入框 */
+  .input {
+    @apply w-full px-3 py-2.5 bg-surface-raised border border-line rounded-theme text-sm text-ink placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent;
+  }
+
+  /* 元信息小字（editorial 下自动加宽字距） */
+  .meta-label {
+    @apply text-xs text-ink-muted tracking-meta;
+  }
+}
+
+[data-theme='editorial'] .card {
+  border-width: 2px;
+}
+
 /* ===== Markdown 渲染样式 ===== */
-.markdown-body h1 { @apply text-2xl font-bold mb-4 mt-6; }
-.markdown-body h2 { @apply text-xl font-semibold mb-3 mt-5; }
-.markdown-body h3 { @apply text-lg font-medium mb-2 mt-4; }
+.markdown-body h1 { @apply font-display text-2xl font-bold mb-4 mt-6; }
+.markdown-body h2 { @apply font-display text-xl font-semibold mb-3 mt-5; }
+.markdown-body h3 { @apply font-display text-lg font-medium mb-2 mt-4; }
 .markdown-body p { @apply mb-3 leading-relaxed; }
 .markdown-body ul { @apply list-disc pl-6 mb-3; }
 .markdown-body ol { @apply list-decimal pl-6 mb-3; }
 .markdown-body li { @apply mb-1; }
-.markdown-body code { @apply bg-gray-100 text-red-600 px-1.5 py-0.5 rounded text-sm font-mono; }
-.markdown-body pre { @apply bg-gray-900 text-gray-100 p-4 rounded-lg mb-4 overflow-x-auto; }
-.markdown-body pre code { @apply bg-transparent text-gray-100 p-0; }
-.markdown-body blockquote { @apply border-l-4 border-blue-400 pl-4 italic text-gray-600 mb-3; }
+.markdown-body code { @apply bg-line-soft text-err px-1.5 py-0.5 rounded-theme text-sm font-mono; }
+.markdown-body pre { @apply bg-ink text-surface p-4 rounded-theme mb-4 overflow-x-auto; }
+.markdown-body pre code { @apply bg-transparent text-surface p-0; }
+.markdown-body blockquote { @apply border-l-4 border-accent pl-4 italic text-ink-muted mb-3; }
 .markdown-body table { @apply w-full border-collapse mb-4; }
-.markdown-body th { @apply border border-gray-300 bg-gray-100 px-3 py-2 text-left font-semibold; }
-.markdown-body td { @apply border border-gray-300 px-3 py-2; }
-.markdown-body a { @apply text-blue-600 underline hover:text-blue-800; }
+.markdown-body th { @apply border border-line bg-line-soft px-3 py-2 text-left font-semibold; }
+.markdown-body td { @apply border border-line-soft px-3 py-2; }
+.markdown-body a { @apply text-accent underline hover:brightness-110; }
 
 /* ===== 滚动条美化 ===== */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { @apply bg-transparent; }
-::-webkit-scrollbar-thumb { @apply bg-gray-300 rounded-full; }
-::-webkit-scrollbar-thumb:hover { @apply bg-gray-400; }
+::-webkit-scrollbar-thumb { @apply bg-line rounded-full; }
+::-webkit-scrollbar-thumb:hover { @apply bg-ink-muted; }
 
 /* ===== SSE 流式光标动画 ===== */
 @keyframes blink {
@@ -38,5 +194,5 @@ body {
 .streaming-cursor::after {
   content: "▊";
   animation: blink 1s infinite;
-  @apply text-blue-500;
+  @apply text-accent;
 }
