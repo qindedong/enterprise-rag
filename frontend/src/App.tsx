@@ -13,6 +13,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { AuthProvider } from './contexts/AuthContext'
+import { ThemeProvider } from './contexts/ThemeContext'
 import { MainLayout, ProtectedRoute } from './components/layout'
 import { LoginPage, RegisterPage, KBListPage, KBDetailPage, ChatPage } from './pages'
 
@@ -25,30 +26,32 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <AuthProvider key={ready ? 'ready' : 'init'}>
-        <Routes>
-          {/* 公开路由 */}
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
+      <ThemeProvider>
+        <AuthProvider key={ready ? 'ready' : 'init'}>
+          <Routes>
+            {/* 公开路由 */}
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
 
-          {/* 受保护路由（需登录） */}
-          <Route
-            element={
-              <ProtectedRoute>
-                <MainLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route path="/kbs" element={<KBListPage />} />
-            <Route path="/kbs/:id" element={<KBDetailPage />} />
-            <Route path="/chat" element={<ChatPage />} />
-          </Route>
+            {/* 受保护路由（需登录） */}
+            <Route
+              element={
+                <ProtectedRoute>
+                  <MainLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="/kbs" element={<KBListPage />} />
+              <Route path="/kbs/:id" element={<KBDetailPage />} />
+              <Route path="/chat" element={<ChatPage />} />
+            </Route>
 
-          {/* 默认跳转 */}
-          <Route path="/" element={<Navigate to="/kbs" replace />} />
-          <Route path="*" element={<Navigate to="/kbs" replace />} />
-        </Routes>
-      </AuthProvider>
+            {/* 默认跳转 */}
+            <Route path="/" element={<Navigate to="/kbs" replace />} />
+            <Route path="*" element={<Navigate to="/kbs" replace />} />
+          </Routes>
+        </AuthProvider>
+      </ThemeProvider>
     </BrowserRouter>
   )
 }

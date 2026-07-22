@@ -5,6 +5,21 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>企业知识库 RAG</title>
+    <script>
+      // 防主题闪烁：React 挂载前恢复已保存的主题
+      (function () {
+        try {
+          var raw = localStorage.getItem('app-theme')
+          var t = raw ? JSON.parse(raw) : null
+          document.documentElement.dataset.theme =
+            t && (t.theme === 'minimal' || t.theme === 'editorial') ? t.theme : 'minimal'
+          document.documentElement.dataset.mode =
+            t && (t.mode === 'light' || t.mode === 'dark')
+              ? t.mode
+              : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+        } catch (e) { /* 忽略损坏数据 */ }
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>
