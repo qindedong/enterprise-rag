@@ -34,6 +34,7 @@ test.beforeEach(async ({ page }) => {
 
 test('默认主题为 minimal', async ({ page }) => {
   await page.goto('/kbs')
+  await expect(page).toHaveURL(/\/kbs/)
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'minimal')
 })
 
@@ -44,18 +45,21 @@ test('切换主题族与明暗并持久化', async ({ page }) => {
   await page.getByRole('radio', { name: '杂志' }).click()
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'editorial')
 
-  // 切换明暗
+  // 切换明暗（断言真正翻转，且用自动重试消除竞态）
+  const html = page.locator('html')
+  const before = await html.getAttribute('data-mode')
   await page
     .getByRole('button', { name: /切换到深色模式|切换到浅色模式/ })
     .click()
-  const mode = await page.locator('html').getAttribute('data-mode')
+  const flipped = before === 'dark' ? 'light' : 'dark'
+  await expect(html).toHaveAttribute('data-mode', flipped)
 
   // localStorage 持久化
   const stored = await page.evaluate(() => localStorage.getItem('app-theme'))
-  expect(JSON.parse(stored!)).toEqual({ theme: 'editorial', mode })
+  expect(JSON.parse(stored!)).toEqual({ theme: 'editorial', mode: flipped })
 
   // 刷新后保持
   await page.reload()
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'editorial')
-  await expect(page.locator('html')).toHaveAttribute('data-mode', mode!)
+  await expect(html).toHaveAttribute('data-theme', 'editorial')
+  await expect(html).toHaveAttribute('data-mode', flipped)
 })
