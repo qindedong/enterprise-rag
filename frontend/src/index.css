@@ -23,6 +23,9 @@
   --err-soft: #fee2e2;
   --info: #2563eb;
   --info-soft: #dbeafe;
+  --code-bg: #0f172a;
+  --code-ink: #f1f5f9;
+  --card-border-width: 1px;
   --display-font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
   --body-font: var(--display-font);
   --radius: 10px;
@@ -47,8 +50,11 @@
   --err-soft: rgb(248 113 113 / 0.12);
   --info: #60a5fa;
   --info-soft: rgb(96 165 250 / 0.12);
+  --code-bg: #0b1120;
+  --code-ink: #f1f5f9;
+  --card-border-width: 1px;
   --radius: 10px;
-  --shadow: none;
+  --shadow: 0 0 #0000;
   --meta-tracking: 0.02em;
 }
 
@@ -69,10 +75,13 @@
   --err-soft: #f5ddd5;
   --info: #3f5f8a;
   --info-soft: #dde4ea;
+  --code-bg: #1a1a1a;
+  --code-ink: #f7f3ec;
+  --card-border-width: 2px;
   --display-font: Georgia, "Songti SC", "STSong", "SimSun", "Noto Serif CJK SC", serif;
   --body-font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
   --radius: 2px;
-  --shadow: none;
+  --shadow: 0 0 #0000;
   --meta-tracking: 0.18em;
 }
 
@@ -93,10 +102,13 @@
   --err-soft: rgb(232 93 74 / 0.14);
   --info: #7f9cc4;
   --info-soft: rgb(127 156 196 / 0.14);
+  --code-bg: #12100d;
+  --code-ink: #f2ede4;
+  --card-border-width: 2px;
   --display-font: Georgia, "Songti SC", "STSong", "SimSun", "Noto Serif CJK SC", serif;
   --body-font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
   --radius: 2px;
-  --shadow: none;
+  --shadow: 0 0 #0000;
   --meta-tracking: 0.18em;
 }
 
@@ -118,6 +130,8 @@
   --color-err-soft: var(--err-soft);
   --color-info: var(--info);
   --color-info-soft: var(--info-soft);
+  --color-code-bg: var(--code-bg);
+  --color-code-ink: var(--code-ink);
   --font-display: var(--display-font);
   --font-body: var(--body-font);
   --radius-theme: var(--radius);
@@ -136,11 +150,12 @@ body {
   /* 卡片/面板/弹窗容器（editorial 下自动变为 2px 墨框锐角） */
   .card {
     @apply bg-surface-raised border border-line rounded-theme shadow-theme;
+    border-width: var(--card-border-width);
   }
 
   /* 主按钮 */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-accent text-accent-ink rounded-theme text-sm font-medium transition-all hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-accent text-accent-ink rounded-theme text-sm font-medium transition-all hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:brightness-100;
   }
 
   /* 次要按钮 */
@@ -159,10 +174,6 @@ body {
   }
 }
 
-[data-theme='editorial'] .card {
-  border-width: 2px;
-}
-
 /* ===== Markdown 渲染样式 ===== */
 .markdown-body h1 { @apply font-display text-2xl font-bold mb-4 mt-6; }
 .markdown-body h2 { @apply font-display text-xl font-semibold mb-3 mt-5; }
@@ -172,8 +183,8 @@ body {
 .markdown-body ol { @apply list-decimal pl-6 mb-3; }
 .markdown-body li { @apply mb-1; }
 .markdown-body code { @apply bg-line-soft text-err px-1.5 py-0.5 rounded-theme text-sm font-mono; }
-.markdown-body pre { @apply bg-ink text-surface p-4 rounded-theme mb-4 overflow-x-auto; }
-.markdown-body pre code { @apply bg-transparent text-surface p-0; }
+.markdown-body pre { @apply bg-code-bg text-code-ink p-4 rounded-theme mb-4 overflow-x-auto; }
+.markdown-body pre code { @apply bg-transparent text-code-ink p-0; }
 .markdown-body blockquote { @apply border-l-4 border-accent pl-4 italic text-ink-muted mb-3; }
 .markdown-body table { @apply w-full border-collapse mb-4; }
 .markdown-body th { @apply border border-line bg-line-soft px-3 py-2 text-left font-semibold; }
