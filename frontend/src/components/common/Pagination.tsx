@@ -26,15 +26,15 @@ export function Pagination({ pageInfo, onPageChange }: PaginationProps) {
   }
 
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200">
-      <span className="text-sm text-gray-500">
+    <div className="flex items-center justify-between px-4 py-3 border-t border-line">
+      <span className="meta-label">
         共 {total} 条
       </span>
       <div className="flex items-center gap-1">
         <button
           onClick={() => onPageChange(page - 1)}
           disabled={page <= 1}
-          className="p-1.5 rounded-md hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="p-1.5 rounded-theme text-ink-muted hover:bg-line-soft disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <LucideChevronLeft className="h-4 w-4" />
         </button>
@@ -42,10 +42,10 @@ export function Pagination({ pageInfo, onPageChange }: PaginationProps) {
           <button
             key={p}
             onClick={() => onPageChange(p)}
-            className={`min-w-[32px] h-8 rounded-md text-sm font-medium transition-colors ${
+            className={`min-w-[32px] h-8 rounded-theme text-sm font-medium transition-colors ${
               p === page
-                ? 'bg-blue-500 text-white'
-                : 'text-gray-600 hover:bg-gray-100'
+                ? 'bg-accent text-accent-ink'
+                : 'text-ink-muted hover:bg-line-soft'
             }`}
           >
             {p}
@@ -54,7 +54,7 @@ export function Pagination({ pageInfo, onPageChange }: PaginationProps) {
         <button
           onClick={() => onPageChange(page + 1)}
           disabled={page >= total_pages}
-          className="p-1.5 rounded-md hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="p-1.5 rounded-theme text-ink-muted hover:bg-line-soft disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <LucideChevronRight className="h-4 w-4" />
         </button>

@@ -4,9 +4,9 @@
 
 export function Loading({ text = '加载中...' }: { text?: string }) {
   return (
-    <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+    <div className="flex flex-col items-center justify-center py-20 text-ink-muted">
       <svg
-        className="animate-spin h-10 w-10 mb-4 text-blue-500"
+        className="animate-spin h-10 w-10 mb-4 text-accent"
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         viewBox="0 0 24 24"
