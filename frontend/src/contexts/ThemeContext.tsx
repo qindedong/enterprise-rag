@@ -31,25 +31,27 @@ const STORAGE_KEY = 'app-theme'
 
 const ThemeContext = createContext<ThemeState | undefined>(undefined)
 
-/** 读取持久化主题；无记录时默认简约 + 跟随系统明暗 */
+/** 读取持久化主题；逐字段校验，不合法/损坏的字段各自回落默认 */
 function readStoredTheme(): { theme: ThemeName; mode: ThemeMode } {
+  let parsed: { theme?: unknown; mode?: unknown } | null = null
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) {
-      const parsed = JSON.parse(raw)
-      if (
-        (parsed.theme === 'minimal' || parsed.theme === 'editorial') &&
-        (parsed.mode === 'light' || parsed.mode === 'dark')
-      ) {
-        return parsed
-      }
+      parsed = JSON.parse(raw)
     }
   } catch {
-    // 数据损坏则回落默认值
+    // 数据损坏则按无记录处理
+    parsed = null
   }
+  const systemMode: ThemeMode = window.matchMedia('(prefers-color-scheme: dark)').matches
+    ? 'dark'
+    : 'light'
   return {
-    theme: 'minimal',
-    mode: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
+    theme:
+      parsed?.theme === 'minimal' || parsed?.theme === 'editorial'
+        ? parsed.theme
+        : 'minimal',
+    mode: parsed?.mode === 'light' || parsed?.mode === 'dark' ? parsed.mode : systemMode,
   }
 }
 
