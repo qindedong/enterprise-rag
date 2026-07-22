@@ -31,7 +31,10 @@ const STORAGE_KEY = 'app-theme'
 
 const ThemeContext = createContext<ThemeState | undefined>(undefined)
 
-/** 读取持久化主题；逐字段校验，不合法/损坏的字段各自回落默认 */
+/**
+ * 读取持久化主题；逐字段校验，不合法/损坏的字段各自回落默认。
+ * 注意：index.html 的防闪烁脚本是本函数的同步镜像，改动需双改。
+ */
 function readStoredTheme(): { theme: ThemeName; mode: ThemeMode } {
   let parsed: { theme?: unknown; mode?: unknown } | null = null
   try {
@@ -61,7 +64,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     document.documentElement.dataset.theme = state.theme
     document.documentElement.dataset.mode = state.mode
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+    } catch {
+      // 存储不可用（隐私模式/配额满）时跳过持久化，DOM 属性仍生效
+    }
   }, [state])
 
   const setTheme = useCallback(
