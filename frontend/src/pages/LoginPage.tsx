@@ -47,21 +47,22 @@ export function LoginPage() {
             <LucideBookOpen className="h-7 w-7 text-accent-ink" />
           </div>
           <h1 className="font-display text-2xl font-bold text-ink">企业知识库 RAG</h1>
-          <div className="h-1 w-10 bg-accent mx-auto mt-3" />
+          <div className="h-1 w-10 bg-accent mx-auto mt-3" aria-hidden="true" />
           <p className="meta-label mt-3">登录以继续使用</p>
         </div>
 
         {/* 表单 */}
         <form onSubmit={handleSubmit} className="card p-6 space-y-4">
           {error && (
-            <div className="bg-err-soft text-err text-sm px-4 py-3 rounded-theme">
+            <div role="alert" className="bg-err-soft text-err text-sm px-4 py-3 rounded-theme">
               {error}
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-ink mb-1">邮箱</label>
+            <label htmlFor="login-email" className="block text-sm font-medium text-ink mb-1">邮箱</label>
             <input
+              id="login-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -72,9 +73,10 @@ export function LoginPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-ink mb-1">密码</label>
+            <label htmlFor="login-password" className="block text-sm font-medium text-ink mb-1">密码</label>
             <div className="relative">
               <input
+                id="login-password"
                 type={showPwd ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -85,6 +87,8 @@ export function LoginPage() {
               <button
                 type="button"
                 onClick={() => setShowPwd(!showPwd)}
+                aria-label={showPwd ? '隐藏密码' : '显示密码'}
+                aria-pressed={showPwd}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-muted hover:text-ink"
               >
                 {showPwd ? <LucideEyeOff className="h-4 w-4" /> : <LucideEye className="h-4 w-4" />}
