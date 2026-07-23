@@ -43,6 +43,7 @@ export async function chatSync(
  * SSE 流式 RAG 问答 — 基于 fetch + ReadableStream
  *
  * 回调：
+ *   onStatus(status: {phase: string, count?: number}) — 处理阶段状态
  *   onToken(token: string)          — 收到文本片段
  *   onCitations(citations: Citation[]) — 收到引用列表
  *   onDone(meta: object)            — 完成
@@ -52,6 +53,7 @@ export async function chatStream(
   kbId: string,
   question: string,
   callbacks: {
+    onStatus?: (status: { phase: string; count?: number }) => void
     onToken: (token: string) => void
     onCitations: (citations: unknown[]) => void
     onDone: (meta: Record<string, unknown>) => void
@@ -118,6 +120,9 @@ export async function chatStream(
           try {
             const data = JSON.parse(line.slice(6))
             switch (currentEvent) {
+              case 'status':
+                callbacks.onStatus?.(data)
+                break
               case 'token':
                 callbacks.onToken(data.content)
                 break

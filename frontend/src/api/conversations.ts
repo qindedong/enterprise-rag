@@ -8,9 +8,11 @@ import type { APIResponse, Conversation, Message, PaginatedResponse } from '../t
 /** 创建对话 */
 export async function createConversation(data: {
   kb_id: string
-  title?: string
+  question: string
 }): Promise<APIResponse<Conversation>> {
-  const res = await apiClient.post('/conversations', data)
+  const res = await apiClient.post(`/knowledge-bases/${data.kb_id}/conversations`, null, {
+    params: { question: data.question },
+  })
   return res.data
 }
 
