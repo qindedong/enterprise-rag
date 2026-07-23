@@ -47,11 +47,12 @@ export async function deleteConversation(id: string): Promise<APIResponse<null>>
   return res.data
 }
 
-/** 提交消息反馈 */
+/** 提交消息反馈（feedback 为 null 表示取消；comment 为点踩时的可选评论） */
 export async function submitFeedback(
   messageId: string,
   feedback: 'positive' | 'negative' | null,
+  comment?: string,
 ): Promise<APIResponse<null>> {
-  const res = await apiClient.post(`/messages/${messageId}/feedback`, { feedback })
+  const res = await apiClient.post(`/messages/${messageId}/feedback`, { feedback, comment })
   return res.data
 }

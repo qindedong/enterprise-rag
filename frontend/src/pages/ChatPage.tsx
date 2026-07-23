@@ -26,7 +26,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { chatStream } from '../api/rag'
 import { listKBs } from '../api/knowledgeBases'
-import { listConversations, createConversation, listMessages } from '../api/conversations'
+import { listConversations, createConversation, listMessages, submitFeedback } from '../api/conversations'
 import type { KnowledgeBase, Conversation, Citation } from '../types'
 
 /** 单条消息 */
@@ -36,6 +36,7 @@ interface ChatMessage {
   content: string
   citations?: Citation[]
   isStreaming?: boolean
+  feedback?: 'positive' | 'negative' | null
 }
 
 export function ChatPage() {
@@ -57,6 +58,10 @@ export function ChatPage() {
 
   /** 当前处理阶段状态 */
   const [status, setStatus] = useState<{ phase: string; count?: number } | null>(null)
+
+  /** 点踩评论框：打开的消息 ID 与评论内容 */
+  const [commentBoxFor, setCommentBoxFor] = useState<string | null>(null)
+  const [commentText, setCommentText] = useState('')
 
   const STATUS_MAP: Record<string, { icon: string; text: string | ((c?: number) => string) }> = {
     searching: { icon: '🔍', text: '正在检索知识库...' },
@@ -111,9 +116,8 @@ export function ChatPage() {
     } catch { /* */ }
   }
 
-  /** 切换对话 */
-  const handleSelectConv = async (convId: string) => {
-    setActiveConvId(convId)
+  /** 加载对话消息（含反馈状态与真实消息 ID） */
+  const loadConvMessages = useCallback(async (convId: string) => {
     try {
       const res = await listMessages(convId, { page_size: 100 })
       setMessages(
@@ -122,9 +126,17 @@ export function ChatPage() {
           role: m.role,
           content: m.content,
           citations: m.citations,
+          feedback: m.feedback ?? null,
         })).reverse(),
       )
     } catch { /* */ }
+  }, [])
+
+  /** 切换对话 */
+  const handleSelectConv = async (convId: string) => {
+    setActiveConvId(convId)
+    setCommentBoxFor(null)
+    await loadConvMessages(convId)
     setShowSidebar(false)
   }
 
@@ -184,6 +196,10 @@ export function ChatPage() {
           setIsGenerating(false)
           setStatus(null)
           loadConversations()
+          // 重新拉取消息，把流式占位消息换成后端持久化版本（真实 ID + 反馈状态）
+          if (activeConvId) {
+            loadConvMessages(activeConvId)
+          }
         },
         onError: (err) => {
           setMessages((prev) =>
@@ -199,6 +215,33 @@ export function ChatPage() {
       },
       activeConvId || undefined,
     )
+  }
+
+  /** 提交消息反馈（点赞/点踩；再点一次取消） */
+  const handleFeedback = async (msg: ChatMessage, value: 'positive' | 'negative') => {
+    const prevValue = msg.feedback ?? null
+    const newValue = prevValue === value ? null : value
+    // 乐观更新，失败回滚
+    setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, feedback: newValue } : m)))
+    if (newValue === 'negative') {
+      setCommentBoxFor(msg.id)
+      setCommentText('')
+    } else if (commentBoxFor === msg.id) {
+      setCommentBoxFor(null)
+    }
+    try {
+      await submitFeedback(msg.id, newValue)
+    } catch {
+      setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, feedback: prevValue } : m)))
+    }
+  }
+
+  /** 提交点踩评论（可空） */
+  const handleSubmitComment = async (msg: ChatMessage) => {
+    try {
+      await submitFeedback(msg.id, 'negative', commentText.trim() || undefined)
+      setCommentBoxFor(null)
+    } catch { /* 评论框保持打开，可重试 */ }
   }
 
   /** 快捷键发送（Enter，Shift+Enter 换行） */
@@ -363,13 +406,63 @@ export function ChatPage() {
                         )}
                         {/* 反馈按钮 */}
                         {!msg.isStreaming && msg.content && (
-                          <div className="flex items-center gap-2 mt-3 pt-2 border-t border-line-soft">
-                            <button className="p-1 text-ink-muted hover:text-ok transition-colors">
-                              <LucideThumbsUp className="h-3.5 w-3.5" />
-                            </button>
-                            <button className="p-1 text-ink-muted hover:text-err transition-colors">
-                              <LucideThumbsDown className="h-3.5 w-3.5" />
-                            </button>
+                          <div className="mt-3 pt-2 border-t border-line-soft">
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                aria-label="回答有帮助"
+                                aria-pressed={msg.feedback === 'positive'}
+                                onClick={() => handleFeedback(msg, 'positive')}
+                                className={`p-1 transition-colors ${
+                                  msg.feedback === 'positive'
+                                    ? 'text-ok'
+                                    : 'text-ink-muted hover:text-ok'
+                                }`}
+                              >
+                                <LucideThumbsUp className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                aria-label="回答没帮助"
+                                aria-pressed={msg.feedback === 'negative'}
+                                onClick={() => handleFeedback(msg, 'negative')}
+                                className={`p-1 transition-colors ${
+                                  msg.feedback === 'negative'
+                                    ? 'text-err'
+                                    : 'text-ink-muted hover:text-err'
+                                }`}
+                              >
+                                <LucideThumbsDown className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                            {/* 点踩评论框 */}
+                            {commentBoxFor === msg.id && (
+                              <div className="mt-2 space-y-2">
+                                <textarea
+                                  value={commentText}
+                                  onChange={(e) => setCommentText(e.target.value)}
+                                  placeholder="补充说明哪里有问题（可选）"
+                                  rows={2}
+                                  className="input resize-none"
+                                />
+                                <div className="flex gap-2 justify-end">
+                                  <button
+                                    type="button"
+                                    className="btn-ghost"
+                                    onClick={() => setCommentBoxFor(null)}
+                                  >
+                                    取消
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="btn-primary"
+                                    onClick={() => handleSubmitComment(msg)}
+                                  >
+                                    提交评论
+                                  </button>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
