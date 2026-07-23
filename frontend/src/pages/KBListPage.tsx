@@ -157,7 +157,7 @@ export function KBListPage() {
           </div>
 
           {/* 分页 */}
-          {pageInfo && (
+          {pageInfo && pageInfo.total_pages > 1 && (
             <div className="mt-6 card overflow-hidden">
               <Pagination pageInfo={pageInfo} onPageChange={setPage} />
             </div>
