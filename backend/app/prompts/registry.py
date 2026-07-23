@@ -4,12 +4,14 @@ Prompt 模板注册中心
 统一管理所有 Prompt 模板，支持变量渲染和版本管理.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from typing import ClassVar
 
 
 @dataclass
 class PromptTemplate:
     """Prompt 模板"""
+
     name: str
     template: str
     variables: list[str]
@@ -19,7 +21,7 @@ class PromptTemplate:
 class PromptRegistry:
     """Prompt 模板注册中心"""
 
-    _templates: dict[str, PromptTemplate] = {}
+    _templates: ClassVar[dict[str, PromptTemplate]] = {}
 
     @classmethod
     def register(cls, template: PromptTemplate) -> None:
@@ -93,7 +95,29 @@ QUERY_REWRITE_TEMPLATE = PromptTemplate(
 请只输出改写后的查询语句，不要输出其他内容。""",
 )
 
+QUERY_REWRITE_WITH_HISTORY_TEMPLATE = PromptTemplate(
+    name="query_rewrite_with_history",
+    description="带对话历史的查询改写 — 指代消解 + 上下文补全",
+    variables=["history", "question"],
+    template="""你是一个查询优化专家。以下是一段多轮对话的历史和用户的最新问题。
+
+请结合对话历史，将最新问题改写为**独立完整**的检索查询语句：
+1. 解析指代（"它"、"这个"、"那"、"上面说的"等），替换为具体对象
+2. 补全省略的主语和上下文
+3. 提取核心概念和关键词，使用正式书面表达
+4. 如果问题本身已完整独立，直接输出原问题
+
+## 对话历史
+{history}
+
+## 最新问题
+{question}
+
+请只输出改写后的查询语句，不要输出其他内容。""",
+)
+
 # 注册全部模板
 PromptRegistry.register(RAG_SYSTEM_TEMPLATE)
 PromptRegistry.register(RAG_USER_TEMPLATE)
 PromptRegistry.register(QUERY_REWRITE_TEMPLATE)
+PromptRegistry.register(QUERY_REWRITE_WITH_HISTORY_TEMPLATE)

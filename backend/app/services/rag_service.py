@@ -27,7 +27,13 @@ class RAGService:
         self.retrieval = retrieval_pipeline
         self.llm_client = llm_client
 
-    async def ask(self, question: str, kb_id: UUID, conversation_id: UUID | None = None) -> dict:
+    async def ask(
+        self,
+        question: str,
+        kb_id: UUID,
+        conversation_id: UUID | None = None,
+        history: list[dict] | None = None,
+    ) -> dict:
         """
         RAG 问答（非流式）
 
@@ -35,14 +41,18 @@ class RAGService:
             question: 用户问题
             kb_id: 知识库 ID
             conversation_id: 对话 ID（多轮对话）
+            history: 对话历史（多轮对话上下文，内部按 Token 预算裁剪）
 
         Returns:
             包含 answer, citations, token_usage, processing_time_ms 的字典
         """
-        start = time.time()
+        from app.rag.context_builder import history_to_chat_messages, trim_history
 
-        # Step 1: 检索
-        docs = await self.retrieval.retrieve(question, kb_id)
+        start = time.time()
+        history = trim_history(history or [])
+
+        # Step 1: 检索（带历史做指代消解）
+        docs = await self.retrieval.retrieve(question, kb_id, history=history or None)
         if not docs:
             return {
                 "answer": "根据现有资料，无法回答这个问题。建议：1) 换个方式提问 2) 检查知识库是否有相关文档",
@@ -60,13 +70,15 @@ class RAGService:
             content = doc.get("content", "")
             context_parts.append(f"[{idx}] {title}\n{content}")
 
-            citations.append({
-                "index": idx,
-                "document_title": title,
-                "chunk_id": doc.get("chunk_id", ""),
-                "content_snippet": content[:200] if content else "",
-                "relevance_score": doc.get("score", 0),
-            })
+            citations.append(
+                {
+                    "index": idx,
+                    "document_title": title,
+                    "chunk_id": doc.get("chunk_id", ""),
+                    "content_snippet": content[:200] if content else "",
+                    "relevance_score": doc.get("score", 0),
+                }
+            )
 
         context = "\n\n---\n\n".join(context_parts)
 
@@ -74,15 +86,15 @@ class RAGService:
         system_prompt = PromptRegistry.render("rag_system")
         user_prompt = PromptRegistry.render("rag_user", context=context, question=question)
 
-        # Step 4: LLM 生成
-        result = await self.llm_client.generate([
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ])
+        # Step 4: LLM 生成（注入裁剪后的对话历史）
+        messages = [{"role": "system", "content": system_prompt}]
+        messages.extend(history_to_chat_messages(history))
+        messages.append({"role": "user", "content": user_prompt})
+        result = await self.llm_client.generate(messages)
 
         # Step 5: 校验引用
         answer = result["answer"]
-        cited_nums = set(int(n) for n in re.findall(r"\[(\d+)\]", answer))
+        cited_nums = {int(n) for n in re.findall(r"\[(\d+)\]", answer)}
         valid_citations = [c for c in citations if c["index"] in cited_nums]
 
         elapsed = (time.time() - start) * 1000
@@ -95,7 +107,13 @@ class RAGService:
             "processing_time_ms": elapsed,
         }
 
-    async def ask_stream(self, question: str, kb_id: UUID, conversation_id: UUID | None = None):
+    async def ask_stream(
+        self,
+        question: str,
+        kb_id: UUID,
+        conversation_id: UUID | None = None,
+        history: list[dict] | None = None,
+    ):
         """
         RAG 问答（流式 SSE）
 
@@ -110,13 +128,16 @@ class RAGService:
         """
         import json
 
+        from app.rag.context_builder import history_to_chat_messages, trim_history
+
         start = time.time()
+        history = trim_history(history or [])
 
         try:
-            # Step 1: 检索
-            docs = await self.retrieval.retrieve(question, kb_id)
+            # Step 1: 检索（带历史做指代消解）
+            docs = await self.retrieval.retrieve(question, kb_id, history=history or None)
             if not docs:
-                yield f'event: error\ndata: {{"code": 400, "message": "根据现有资料，无法回答这个问题"}}\n\n'
+                yield 'event: error\ndata: {"code": 400, "message": "根据现有资料，无法回答这个问题"}\n\n'
                 return
 
             # Step 2: 组装 Context
@@ -127,14 +148,16 @@ class RAGService:
                 title = doc.get("document_title", "未知文档")
                 content = doc.get("content", "")
                 context_parts.append(f"[{idx}] {title}\n{content}")
-                citations.append({
-                    "index": idx,
-                    "document_title": title,
-                    "chunk_id": doc.get("chunk_id", ""),
-                    "content_snippet": content[:200],
-                    "page_number": doc.get("page_number"),
-                    "relevance_score": doc.get("score", 0),
-                })
+                citations.append(
+                    {
+                        "index": idx,
+                        "document_title": title,
+                        "chunk_id": doc.get("chunk_id", ""),
+                        "content_snippet": content[:200],
+                        "page_number": doc.get("page_number"),
+                        "relevance_score": doc.get("score", 0),
+                    }
+                )
 
             context = "\n\n---\n\n".join(context_parts)
 
@@ -142,12 +165,13 @@ class RAGService:
             system_prompt = PromptRegistry.render("rag_system")
             user_prompt = PromptRegistry.render("rag_user", context=context, question=question)
 
-            # Step 4: 流式生成
+            # Step 4: 流式生成（注入裁剪后的对话历史）
+            messages = [{"role": "system", "content": system_prompt}]
+            messages.extend(history_to_chat_messages(history))
+            messages.append({"role": "user", "content": user_prompt})
+
             full_answer = ""
-            async for token in self.llm_client.generate_stream([
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ]):
+            async for token in self.llm_client.generate_stream(messages):
                 full_answer += token
                 yield f"event: token\ndata: {json.dumps({'content': token})}\n\n"
 
@@ -159,4 +183,4 @@ class RAGService:
 
         except Exception as e:
             logger.error(f"RAG 流式生成错误: {e}", exc_info=True)
-            yield f'event: error\ndata: {{"code": 500, "message": "AI 服务暂不可用: {str(e)}"}}\n\n'
+            yield f'event: error\ndata: {{"code": 500, "message": "AI 服务暂不可用: {e!s}"}}\n\n'

@@ -14,21 +14,42 @@
 
 ---
 
-## [1.0.0] — MVP 版本（计划中）
+## [1.0.0] — 2026-07-24
 
-> 预计发布：Sprint 8 结束（第 16 周）
+首个正式版本。MVP 全部功能交付，并提前落地了原 v1.5 规划的
+混合检索与多轮对话增强（检索质量与对话体验的核心项）。
 
 ### Added
 - **用户系统**：注册、登录、JWT Token 认证、Token 刷新
 - **知识库管理**：创建、列表、详情、更新、删除、成员管理
 - **文档管理**：上传（PDF/Markdown/TXT）、列表、详情、删除
-- **文档处理管线**：自动解析 → 分块（500/100） → 向量化 → Qdrant 索引
+- **文档处理管线**：自动解析 → 分块（500/100） → 向量化 → Qdrant 索引，
+  分块同步落库 `document_chunks`（jieba 预分词 + tsvector 生成列）
 - **RAG 问答**：查询改写 → 向量检索（Top-50） → 重排序（Top-10） → LLM 流式生成
+- **混合检索**（原 v1.5 规划，提前交付）：BM25（PostgreSQL tsvector + jieba）
+  与向量检索 RRF 融合，`POST /search` 支持 `vector|bm25|hybrid` 三种模式
+- **多轮对话增强**（原 v1.5 规划，提前交付）：对话历史 Token 预算裁剪（1500 tokens /
+  6 轮）、指代消解查询改写、历史注入生成、问答轮次自动落库
+- **独立检索 API**：`POST /api/v1/knowledge-bases/{kb_id}/search`，只检索不生成，
+  供效果评估与调试
+- **检索效果评估**：36 条标注数据集（easy/medium/hard）+ Recall@K / MRR 评估脚本
+  （`backend/scripts/evaluate_retrieval.py`），基线：vector Recall@5=1.000、
+  hybrid MRR@10=0.972
 - **引用溯源**：每个回答附带引用来源（文档名、页码、原文片段）
 - **对话管理**：创建对话、历史记录、消息反馈
 - **前端应用**：React + TypeScript + TailwindCSS，支持流式显示
 - **Docker 部署**：Docker Compose 一键部署（Nginx + API + Worker + PG + Qdrant + Redis）
-- **CI/CD**：GitHub Actions 自动运行 Black + Ruff + MyPy + Pytest
+- **CI**：GitHub Actions（backend: Ruff lint/format + Pytest 覆盖率 75% 门槛；
+  frontend: oxlint + Vite build）
+
+### Fixed
+- **Worker Redis 超时死循环**：`redis.asyncio` 的 `TimeoutError` 不继承内置
+  `TimeoutError`，BRPOP 空轮询每秒刷 ERROR 且无法消费任务
+- **文档状态永不更新**：Worker 通过 pub/sub 发布 `rag:doc_status`，但 API 端无订阅者；
+  新增 `doc_status_subscriber` 后台任务落库文档状态
+- **qdrant-client 版本漂移**：server 1.9 与 client ≥1.10 不兼容（`search()` 被移除），
+  依赖锁定 `<1.10`
+- 9 处异常链缺失（`raise ... from`）、`Base` 再导出误删防护等 lint 修复
 
 ---
 
@@ -36,12 +57,12 @@
 
 | 版本 | 状态 | 预计时间 | 核心主题 |
 |------|:---:|------|------|
-| v0.1 | 🔜 | Sprint 1-2 | 项目骨架 + 基础设施 |
-| v0.2 | 🔜 | Sprint 3-4 | 文档引擎 + 前端基础 |
-| v0.3 | 🔜 | Sprint 5 | RAG 检索链路 |
-| v0.4 | 🔜 | Sprint 6-7 | RAG 生成 + 对话 + 前端 |
-| v1.0.0 | 🔜 | Sprint 8 | MVP 发布 |
-| v1.5.0 | 📋 | Sprint 9-12 | 混合检索 + RBAC + 多轮对话 |
+| v0.1 | ✅ | Sprint 1-2 | 项目骨架 + 基础设施 |
+| v0.2 | ✅ | Sprint 3-4 | 文档引擎 + 前端基础 |
+| v0.3 | ✅ | Sprint 5 | RAG 检索链路 |
+| v0.4 | ✅ | Sprint 6-7 | RAG 生成 + 对话 + 前端 |
+| v1.0.0 | ✅ | 2026-07-24 | MVP 发布（含混合检索 + 多轮对话） |
+| v1.5.0 | 🚧 | Sprint 9-12 | RBAC + 反馈面板 + 批量上传 + Word 解析 |
 | v2.0.0 | 📋 | Sprint 13-16 | 跨知识库 + SSO + 数据面板 |
 
 > 🔜 = 计划中 | 🚧 = 开发中 | ✅ = 已发布 | 📋 = 待规划
