@@ -88,6 +88,7 @@ export function KBListPage() {
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
             placeholder="搜索知识库..."
+            aria-label="搜索知识库"
             className="input pl-9"
           />
         </div>
@@ -171,7 +172,7 @@ export function KBListPage() {
           <div className="relative card w-full max-w-md p-6">
             <h2 className="font-display text-lg font-semibold text-ink mb-4">创建知识库</h2>
             {createError && (
-              <div className="bg-err-soft text-err text-sm px-3 py-2 rounded-theme mb-3">{createError}</div>
+              <div role="alert" className="bg-err-soft text-err text-sm px-3 py-2 rounded-theme mb-3">{createError}</div>
             )}
             <div className="space-y-3">
               <div>
