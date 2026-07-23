@@ -56,8 +56,6 @@ services:
       - rag-network
     volumes:
       - ./uploads:/app/uploads
-    networks:
-      - rag-network
 
   # ===== Redis 缓存 =====
   redis:
