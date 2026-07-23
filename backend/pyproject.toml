@@ -120,7 +120,7 @@ addopts = [
     "--cov=app",
     "--cov-report=term-missing",
     "--cov-report=html",
-    "--cov-fail-under=75",
+    "--cov-fail-under=80",
 ]
 markers = [
     "unit: 单元测试",
