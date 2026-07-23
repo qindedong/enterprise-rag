@@ -288,7 +288,7 @@ export function KBDetailPage() {
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}
           aria-label="按状态筛选"
-          className="px-3 py-2 bg-surface-raised border border-line rounded-theme text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent"
+          className="px-3 py-2.5 bg-surface-raised border border-line rounded-theme text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
         >
           <option value="">全部状态</option>
           {Object.entries(DOC_STATUS_MAP).map(([k, v]) => (
@@ -368,7 +368,7 @@ export function KBDetailPage() {
               <button
                 onClick={handleDeleteKB}
                 disabled={deleting}
-                className="bg-err text-accent-ink rounded-theme px-4 py-2 text-sm font-medium transition-all hover:brightness-110 disabled:opacity-60"
+                className="bg-err text-err-ink rounded-theme px-4 py-2 text-sm font-medium transition-all hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {deleting ? '删除中...' : '确认删除'}
               </button>

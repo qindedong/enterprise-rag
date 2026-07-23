@@ -419,7 +419,7 @@ export function ChatPage() {
             {activeCitations.map((c) => (
               <div key={c.index} className="bg-line-soft rounded-theme p-3">
                 <div className="flex items-center gap-2 mb-1.5">
-                  <span className="text-xs font-bold text-accent bg-accent/10 px-1.5 py-0.5 rounded">
+                  <span className="text-xs font-bold text-accent bg-accent/10 px-1.5 py-0.5 rounded-theme">
                     [{c.index}]
                   </span>
                   <span className="text-xs font-medium text-ink truncate">

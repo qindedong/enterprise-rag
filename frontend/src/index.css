@@ -21,6 +21,7 @@
   --warn-soft: #fef3c7;
   --err: #dc2626;
   --err-soft: #fee2e2;
+  --err-ink: #ffffff;
   --info: #2563eb;
   --info-soft: #dbeafe;
   --code-bg: #0f172a;
@@ -48,6 +49,7 @@
   --warn-soft: rgb(251 191 36 / 0.12);
   --err: #f87171;
   --err-soft: rgb(248 113 113 / 0.12);
+  --err-ink: #1a1815;
   --info: #60a5fa;
   --info-soft: rgb(96 165 250 / 0.12);
   --code-bg: #0b1120;
@@ -73,6 +75,7 @@
   --warn-soft: #f2e8d5;
   --err: #d43d2a;
   --err-soft: #f5ddd5;
+  --err-ink: #f7f3ec;
   --info: #3f5f8a;
   --info-soft: #dde4ea;
   --code-bg: #1a1a1a;
@@ -100,6 +103,7 @@
   --warn-soft: rgb(217 167 94 / 0.14);
   --err: #e85d4a;
   --err-soft: rgb(232 93 74 / 0.14);
+  --err-ink: #1a1815;
   --info: #7f9cc4;
   --info-soft: rgb(127 156 196 / 0.14);
   --code-bg: #12100d;
@@ -128,6 +132,7 @@
   --color-warn-soft: var(--warn-soft);
   --color-err: var(--err);
   --color-err-soft: var(--err-soft);
+  --color-err-ink: var(--err-ink);
   --color-info: var(--info);
   --color-info-soft: var(--info-soft);
   --color-code-bg: var(--code-bg);
