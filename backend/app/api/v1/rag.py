@@ -155,6 +155,8 @@ async def rag_chat_stream(
     conv_id = UUID(req.conversation_id) if req.conversation_id else None
     service = _get_rag_service()
     history = await _load_history(db, conv_id)
+    # 释放事务/连接：后续 LLM 生成耗时不占用连接池（高并发关键）
+    await db.commit()
 
     async def event_stream():
         # 发送对话 ID（供前端后续多轮会话使用）
@@ -208,6 +210,8 @@ async def rag_chat_sync(
     conv_id = UUID(req.conversation_id) if req.conversation_id else None
     service = _get_rag_service()
     history = await _load_history(db, conv_id)
+    # 释放事务/连接：后续 LLM 生成耗时不占用连接池（高并发关键）
+    await db.commit()
     result = await service.ask(req.question, UUID(kb_id), conv_id, history)
 
     if conv_id:
@@ -240,6 +244,8 @@ async def rag_search(
     kb = await kb_repo.find_by_id(UUID(kb_id))
     if not kb:
         raise NotFoundException("知识库", kb_id)
+    # 释放事务/连接：后续检索+LLM 改写耗时不占用连接池（高并发关键）
+    await db.commit()
 
     start = time.time()
     service = _get_rag_service()

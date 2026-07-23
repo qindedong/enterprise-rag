@@ -1,0 +1,20 @@
+{
+  "endpoint": "chat",
+  "mode": null,
+  "concurrency": 20,
+  "total_requests": 40,
+  "success": 40,
+  "errors": 0,
+  "error_rate": 0.0,
+  "wall_time_s": 8.39,
+  "throughput_rps": 4.77,
+  "latency_ms": {
+    "min": 1371.0,
+    "p50": 2175.0,
+    "p95": 3114.0,
+    "p99": 3461.0,
+    "max": 3674.0,
+    "mean": 2187.0
+  },
+  "p95_under_15s": true
+}

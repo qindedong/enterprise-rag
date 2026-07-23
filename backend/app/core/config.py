@@ -29,8 +29,8 @@ class Settings(BaseSettings):
 
     # ===== 数据库配置 =====
     DATABASE_URL: str = "postgresql+asyncpg://raguser:ragpassword@localhost:5432/ragdb"
-    DB_POOL_SIZE: int = 20
-    DB_MAX_OVERFLOW: int = 10
+    DB_POOL_SIZE: int = 50
+    DB_MAX_OVERFLOW: int = 40  # 50+40=90 < PG 默认 max_connections=100
     DB_ECHO: bool = False
 
     # ===== Redis 配置 =====

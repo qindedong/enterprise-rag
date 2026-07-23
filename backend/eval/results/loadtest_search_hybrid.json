@@ -1,0 +1,20 @@
+{
+  "endpoint": "search",
+  "mode": "hybrid",
+  "concurrency": 100,
+  "total_requests": 300,
+  "success": 300,
+  "errors": 0,
+  "error_rate": 0.0,
+  "wall_time_s": 22.35,
+  "throughput_rps": 13.42,
+  "latency_ms": {
+    "min": 1194.0,
+    "p50": 3578.0,
+    "p95": 6793.0,
+    "p99": 6988.0,
+    "max": 7035.0,
+    "mean": 3507.0
+  },
+  "p95_under_15s": true
+}
