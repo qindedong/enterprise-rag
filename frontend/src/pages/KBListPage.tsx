@@ -82,18 +82,18 @@ export function KBListPage() {
       {/* 顶部搜索栏 */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-6">
         <div className="relative flex-1 w-full">
-          <LucideSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <LucideSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ink-muted" />
           <input
             type="text"
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
             placeholder="搜索知识库..."
-            className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="input pl-9"
           />
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors shrink-0"
+          className="btn-primary shrink-0"
         >
           <LucidePlus className="h-4 w-4" />
           创建知识库
@@ -113,7 +113,7 @@ export function KBListPage() {
             !keyword && (
               <button
                 onClick={() => setShowModal(true)}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600"
+                className="btn-primary"
               >
                 创建第一个知识库
               </button>
@@ -128,20 +128,20 @@ export function KBListPage() {
               <div
                 key={kb.id}
                 onClick={() => navigate(`/kbs/${kb.id}`)}
-                className="bg-white rounded-xl border border-gray-200 p-5 cursor-pointer hover:shadow-md hover:border-blue-200 transition-all"
+                className="card p-5 cursor-pointer hover:border-accent transition-colors"
               >
                 <div className="flex items-start gap-3 mb-3">
-                  <div className="h-10 w-10 bg-blue-50 rounded-lg flex items-center justify-center shrink-0">
-                    <LucideDatabase className="h-5 w-5 text-blue-500" />
+                  <div className="h-10 w-10 bg-accent/10 rounded-theme flex items-center justify-center shrink-0">
+                    <LucideDatabase className="h-5 w-5 text-accent" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h3 className="font-semibold text-gray-800 truncate">{kb.name}</h3>
+                    <h3 className="font-display font-semibold text-ink truncate">{kb.name}</h3>
                     {kb.description && (
-                      <p className="text-xs text-gray-400 mt-0.5 line-clamp-2">{kb.description}</p>
+                      <p className="meta-label mt-0.5 line-clamp-2">{kb.description}</p>
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-4 text-xs text-gray-400">
+                <div className="flex items-center gap-4 meta-label">
                   <span className="flex items-center gap-1">
                     <LucideFileText className="h-3 w-3" />
                     {kb.doc_count || 0} 个文档
@@ -157,7 +157,7 @@ export function KBListPage() {
 
           {/* 分页 */}
           {pageInfo && (
-            <div className="mt-6 bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="mt-6 card overflow-hidden">
               <Pagination pageInfo={pageInfo} onPageChange={setPage} />
             </div>
           )}
@@ -168,46 +168,48 @@ export function KBListPage() {
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowModal(false)} />
-          <div className="relative bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-md p-6">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">创建知识库</h2>
+          <div className="relative card w-full max-w-md p-6">
+            <h2 className="font-display text-lg font-semibold text-ink mb-4">创建知识库</h2>
             {createError && (
-              <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded-lg mb-3">{createError}</div>
+              <div className="bg-err-soft text-err text-sm px-3 py-2 rounded-theme mb-3">{createError}</div>
             )}
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">名称 *</label>
+                <label htmlFor="kb-name" className="block text-sm font-medium text-ink mb-1">名称 *</label>
                 <input
+                  id="kb-name"
                   type="text"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                   placeholder="例如：员工手册、技术文档"
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="input"
                   autoFocus
                   onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">描述（可选）</label>
+                <label htmlFor="kb-desc" className="block text-sm font-medium text-ink mb-1">描述（可选）</label>
                 <textarea
+                  id="kb-desc"
                   value={newDesc}
                   onChange={(e) => setNewDesc(e.target.value)}
                   placeholder="简单描述这个知识库的内容..."
                   rows={3}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  className="input resize-none"
                 />
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-5">
               <button
                 onClick={() => { setShowModal(false); setCreateError('') }}
-                className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                className="btn-ghost"
               >
                 取消
               </button>
               <button
                 onClick={handleCreate}
                 disabled={createLoading}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 disabled:opacity-60 transition-colors"
+                className="btn-primary"
               >
                 {createLoading ? '创建中...' : '创建'}
               </button>
