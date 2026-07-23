@@ -43,6 +43,8 @@ grep -nE "(gray|blue|red|green|yellow|amber|emerald|rose|orange|purple|indigo|sk
 | 圆角 | `rounded-lg` / `rounded-xl` / `rounded-md` | `rounded-theme` |
 | 阴影 | `shadow-sm` / `shadow-md` / `shadow-xl` | `shadow-theme`（`card` 已含） |
 
+**组件类使用约定（Task 6 审查确立）：** 组件类（`card`/`btn-primary`/`btn-ghost`/`input`/`meta-label`）管视觉属性（底色、边框、圆角、阴影、焦点环），布局与间距仍用工具类叠加（如 `btn-primary w-full`、`input pr-10`、`card p-6`）。工具类覆盖组件类依赖 Tailwind 的 components < utilities 层叠层序，不要把组件类移出 `@layer components`。
+
 ---
 
 ## Task 1: 主题令牌与全局样式（index.css 重写）
@@ -1012,21 +1014,22 @@ export function LoginPage() {
             <LucideBookOpen className="h-7 w-7 text-accent-ink" />
           </div>
           <h1 className="font-display text-2xl font-bold text-ink">企业知识库 RAG</h1>
-          <div className="h-1 w-10 bg-accent mx-auto mt-3" />
+          <div aria-hidden="true" className="h-1 w-10 bg-accent mx-auto mt-3" />
           <p className="meta-label mt-3">登录以继续使用</p>
         </div>
 
         {/* 表单 */}
         <form onSubmit={handleSubmit} className="card p-6 space-y-4">
           {error && (
-            <div className="bg-err-soft text-err text-sm px-4 py-3 rounded-theme">
+            <div role="alert" className="bg-err-soft text-err text-sm px-4 py-3 rounded-theme">
               {error}
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-ink mb-1">邮箱</label>
+            <label htmlFor="login-email" className="block text-sm font-medium text-ink mb-1">邮箱</label>
             <input
+              id="login-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -1037,9 +1040,10 @@ export function LoginPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-ink mb-1">密码</label>
+            <label htmlFor="login-password" className="block text-sm font-medium text-ink mb-1">密码</label>
             <div className="relative">
               <input
+                id="login-password"
                 type={showPwd ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -1050,6 +1054,8 @@ export function LoginPage() {
               <button
                 type="button"
                 onClick={() => setShowPwd(!showPwd)}
+                aria-label={showPwd ? '隐藏密码' : '显示密码'}
+                aria-pressed={showPwd}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-muted hover:text-ink"
               >
                 {showPwd ? <LucideEyeOff className="h-4 w-4" /> : <LucideEye className="h-4 w-4" />}
@@ -1115,6 +1121,7 @@ git commit -m "feat(frontend): 登录页语义化改造"
 | 密码提示 `text-xs text-gray-400 mt-1` | → `meta-label mt-1` |
 | 提交按钮 `w-full py-2.5 bg-blue-500 text-white rounded-lg ...` | → `className="btn-primary w-full"` |
 | 底部 `text-center text-sm text-gray-500 mt-6` | → `text-ink-muted`；链接 `text-blue-600` → `text-accent` |
+| 无障碍（范本新规，Task 6 已落地） | 每个字段 label 加 `htmlFor`、input 加对应 `id`（建议 `register-username` / `register-email` / `register-password` / `register-password-confirm`）；眼睛按钮加 `aria-label={showPwd ? '隐藏密码' : '显示密码'}` + `aria-pressed={showPwd}`；错误条加 `role="alert"`；品牌区装饰线加 `aria-hidden="true"` |
 
 - [ ] **Step 2: 验证**
 
