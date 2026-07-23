@@ -4,10 +4,6 @@
 负责用户注册、登录、Token 刷新的业务逻辑编排.
 """
 
-from datetime import datetime, timezone
-
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.core.exceptions import DuplicateException, UnauthorizedException, ValidationException
 from app.core.logger import get_logger
 from app.models.database.user import User
@@ -139,7 +135,7 @@ class AuthService:
             if payload.get("type") != "refresh":
                 raise UnauthorizedException("无效的 Refresh Token")
         except Exception:
-            raise UnauthorizedException("Refresh Token 无效或已过期")
+            raise UnauthorizedException("Refresh Token 无效或已过期") from None
 
         user_id = payload["sub"]
         user = await self.user_repo.find_by_id(user_id)

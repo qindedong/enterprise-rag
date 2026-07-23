@@ -22,25 +22,25 @@ async_engine = create_async_engine(
     pool_size=settings.DB_POOL_SIZE,
     max_overflow=settings.DB_MAX_OVERFLOW,
     echo=settings.DB_ECHO,
-    pool_pre_ping=True,       # 连接前检查有效性
-    pool_recycle=3600,        # 连接回收时间（秒）
+    pool_pre_ping=True,  # 连接前检查有效性
+    pool_recycle=3600,  # 连接回收时间（秒）
 )
 
 # 异步会话工厂
 async_session = async_sessionmaker(
     async_engine,
     class_=AsyncSession,
-    expire_on_commit=False,   # commit 后不使对象过期
+    expire_on_commit=False,  # commit 后不使对象过期
 )
 
 
 class Base(DeclarativeBase):
     """所有 ORM 模型的基类"""
+
     pass
 
 
 # 确保所有模型被导入（供 Alembic autogenerate 使用）
-import app.models.database  # noqa: E402, F811
 
 
 async def get_db() -> AsyncSession:

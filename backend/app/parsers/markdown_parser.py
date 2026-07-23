@@ -20,7 +20,7 @@ class MarkdownParser(BaseParser):
         if not path.exists():
             raise FileNotFoundError(f"文件不存在: {file_path}")
 
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             content = f.read()
 
         if not content.strip():

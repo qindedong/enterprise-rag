@@ -1,16 +1,23 @@
 """Core 层补充测试 — Logger, ExceptionHandlers, Exceptions"""
 
-import pytest
 import logging
-from unittest.mock import MagicMock
 
-from app.core.logger import StructuredFormatter
-from app.core.exceptions import (
-    NotFoundException, EmbeddingException, ProcessingException, AppException,
-    ValidationException, DuplicateException, UnauthorizedException,
-    ForbiddenException, LLMException, RetrievalException,
-)
+import pytest
+
 from app.core.exception_handlers import app_exception_handler, global_exception_handler
+from app.core.exceptions import (
+    AppException,
+    DuplicateException,
+    EmbeddingException,
+    ForbiddenException,
+    LLMException,
+    NotFoundException,
+    ProcessingException,
+    RetrievalException,
+    UnauthorizedException,
+    ValidationException,
+)
+from app.core.logger import StructuredFormatter
 
 
 class TestStructuredFormatter:
@@ -24,9 +31,12 @@ class TestStructuredFormatter:
         )
 
         record = logging.LogRecord(
-            name="test_logger", level=logging.INFO,
-            pathname="test.py", lineno=10,
-            msg="文档处理完成", args=(),
+            name="test_logger",
+            level=logging.INFO,
+            pathname="test.py",
+            lineno=10,
+            msg="文档处理完成",
+            args=(),
             exc_info=None,
         )
         record.extra_fields = {"doc_id": "abc123", "chunks": 15}
@@ -47,10 +57,14 @@ class TestStructuredFormatter:
             raise ValueError("测试异常")
         except ValueError:
             import sys
+
             record = logging.LogRecord(
-                name="test_logger", level=logging.ERROR,
-                pathname="test.py", lineno=20,
-                msg="操作失败", args=(),
+                name="test_logger",
+                level=logging.ERROR,
+                pathname="test.py",
+                lineno=20,
+                msg="操作失败",
+                args=(),
                 exc_info=sys.exc_info(),
             )
 
@@ -67,7 +81,6 @@ class TestExceptionHandlers:
     async def test_app_exception_handler(self):
         """测试：AppException 处理返回正确 JSON"""
         from fastapi import Request
-        from starlette.datastructures import MutableHeaders
 
         scope = {
             "type": "http",

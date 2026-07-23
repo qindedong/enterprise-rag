@@ -2,13 +2,14 @@
 对话数据访问层
 """
 
+from datetime import UTC
 from uuid import UUID
 
-from sqlalchemy import func, select, and_
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.database.conversation import Conversation, Message, ConvStatus, MsgFeedback
+from app.models.database.conversation import Conversation, ConvStatus, Message, MsgFeedback
 
 
 class ConversationRepository:
@@ -59,19 +60,21 @@ class ConversationRepository:
 
     async def delete(self, conv_id: UUID) -> None:
         """软删除对话（级联消息由 ondelete=CASCADE 处理）"""
+        from datetime import datetime
+
         from sqlalchemy import update as sql_update
-        from datetime import datetime, timezone
 
         await self.session.execute(
             sql_update(Conversation)
             .where(Conversation.id == conv_id)
-            .values(status=ConvStatus.ARCHIVED, updated_at=datetime.now(timezone.utc))
+            .values(status=ConvStatus.ARCHIVED, updated_at=datetime.now(UTC))
         )
 
     async def update_message_count(self, conv_id: UUID) -> None:
         """更新消息计数"""
+        from datetime import datetime
+
         from sqlalchemy import update as sql_update
-        from datetime import datetime, timezone
 
         count = await self.session.execute(
             select(func.count()).where(Message.conversation_id == conv_id)
@@ -80,7 +83,7 @@ class ConversationRepository:
         await self.session.execute(
             sql_update(Conversation)
             .where(Conversation.id == conv_id)
-            .values(message_count=total, updated_at=datetime.now(timezone.utc))
+            .values(message_count=total, updated_at=datetime.now(UTC))
         )
 
 
@@ -119,7 +122,9 @@ class MessageRepository:
         )
         return list(result.scalars().all())
 
-    async def set_feedback(self, msg_id: UUID, feedback: str | None, comment: str | None = None) -> None:
+    async def set_feedback(
+        self, msg_id: UUID, feedback: str | None, comment: str | None = None
+    ) -> None:
         """设置消息反馈"""
         from sqlalchemy import update as sql_update
 

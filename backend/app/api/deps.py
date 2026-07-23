@@ -6,11 +6,11 @@
 
 from uuid import UUID
 
-from fastapi import Depends, Header
+from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import Settings, get_settings
+from app.core.config import get_settings
 from app.core.database import get_db
 from app.core.exceptions import UnauthorizedException
 from app.core.logger import get_logger
@@ -25,13 +25,13 @@ logger = get_logger(__name__)
 
 # 直接导出常用依赖
 __all__ = [
-    "get_settings",
-    "get_db",
-    "get_current_user",
-    "get_user_repository",
-    "get_kb_repository",
     "get_auth_service",
+    "get_current_user",
+    "get_db",
+    "get_kb_repository",
     "get_kb_service",
+    "get_settings",
+    "get_user_repository",
 ]
 
 # ===== Bearer Token 认证方案 =====
@@ -57,7 +57,7 @@ async def get_current_user(
         if payload.get("type") != "access":
             raise UnauthorizedException("无效的 Token 类型")
     except Exception:
-        raise UnauthorizedException("Token 无效或已过期")
+        raise UnauthorizedException("Token 无效或已过期") from None
 
     user_id = payload.get("sub")
     if not user_id:
@@ -73,6 +73,7 @@ async def get_current_user(
 
 # ===== Repository 注入 =====
 
+
 def get_user_repository(db: AsyncSession = Depends(get_db)) -> UserRepository:
     """用户 Repository 注入"""
     return UserRepository(db)
@@ -84,6 +85,7 @@ def get_kb_repository(db: AsyncSession = Depends(get_db)) -> KBRepository:
 
 
 # ===== Service 注入 =====
+
 
 def get_auth_service(
     user_repo: UserRepository = Depends(get_user_repository),

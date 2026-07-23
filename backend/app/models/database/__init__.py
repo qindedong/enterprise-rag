@@ -5,20 +5,20 @@
 """
 
 from app.models.database.base import Base, TimestampMixin, UUIDMixin
-from app.models.database.user import User
-from app.models.database.knowledge_base import KnowledgeBase, KBMember
-from app.models.database.document import Document, DocumentChunk
 from app.models.database.conversation import Conversation, Message
+from app.models.database.document import Document, DocumentChunk
+from app.models.database.knowledge_base import KBMember, KnowledgeBase
+from app.models.database.user import User
 
 __all__ = [
     "Base",
+    "Conversation",
+    "Document",
+    "DocumentChunk",
+    "KBMember",
+    "KnowledgeBase",
+    "Message",
     "TimestampMixin",
     "UUIDMixin",
     "User",
-    "KnowledgeBase",
-    "KBMember",
-    "Document",
-    "DocumentChunk",
-    "Conversation",
-    "Message",
 ]

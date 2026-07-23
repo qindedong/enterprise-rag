@@ -47,7 +47,7 @@ class PDFParser(BaseParser):
         try:
             doc = fitz.open(str(path))
         except Exception as e:
-            raise ValueError(f"PDF 文件无法打开，可能已损坏: {e}")
+            raise ValueError(f"PDF 文件无法打开，可能已损坏: {e}") from e
 
         if doc.is_encrypted:
             doc.close()

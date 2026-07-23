@@ -12,13 +12,14 @@
         return APIResponse(data=user)
 """
 
-from typing import Generic, TypeVar
+from typing import TypeVar
+
 from pydantic import BaseModel, Field
 
 T = TypeVar("T")
 
 
-class APIResponse(BaseModel, Generic[T]):
+class APIResponse[T](BaseModel):
     """统一 API 响应格式
 
     项目所有接口必须返回此模型的实例。
@@ -44,14 +45,14 @@ class PageInfo(BaseModel):
     page_size: int = Field(..., description="每页数量", ge=1, le=100)
 
 
-class PaginatedData(BaseModel, Generic[T]):
+class PaginatedData[T](BaseModel):
     """分页数据容器"""
 
     items: list[T] = Field(default_factory=list, description="数据列表")
     page_info: PageInfo = Field(..., description="分页信息")
 
 
-class PaginatedResponse(APIResponse[PaginatedData[T]], Generic[T]):
+class PaginatedResponse[T](APIResponse[PaginatedData[T]]):
     """分页响应格式
 
     用于列表类接口，包含分页信息。

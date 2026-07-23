@@ -1,14 +1,14 @@
 """Repository 层扩展测试 — DocumentRepository, ConversationRepository, MessageRepository"""
 
-import pytest
 from uuid import uuid4
+
+import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.database.document import Document, DocType, DocStatus, DocumentChunk
-from app.models.database.conversation import Conversation, ConvStatus
+from app.models.database.document import DocStatus, DocType
 from app.models.database.knowledge_base import KnowledgeBase
-from app.repositories.document_repository import DocumentRepository, ChunkRepository
 from app.repositories.conversation_repository import ConversationRepository, MessageRepository
+from app.repositories.document_repository import ChunkRepository, DocumentRepository
 from app.repositories.kb_repository import KBRepository
 
 
@@ -98,7 +98,7 @@ class TestDocumentRepository:
         await db_session.commit()
 
         # 软删除后 list 不包含它
-        items, total = await repo.list_by_kb(kb.id)
+        _items, total = await repo.list_by_kb(kb.id)
         assert total == 0
 
 
@@ -117,7 +117,8 @@ class TestChunkRepository:
         await db_session.commit()
 
         chunks = await chunk_repo.bulk_insert(
-            doc.id, kb.id,
+            doc.id,
+            kb.id,
             chunks=["第一段", "第二段", "第三段"],
             token_counts=[5, 8, 6],
         )
@@ -164,10 +165,10 @@ class TestConversationRepository:
         await repo.create(kb_id=kb.id, user_id=user_id, title="对话2")
         await db_session.commit()
 
-        convs, total = await repo.list_by_user(user_id, kb_id=kb.id, page=1, page_size=10)
+        _convs, total = await repo.list_by_user(user_id, kb_id=kb.id, page=1, page_size=10)
         assert total == 2
 
-        convs_no_kb, total = await repo.list_by_user(user_id, page=1, page_size=10)
+        _convs_no_kb, total = await repo.list_by_user(user_id, page=1, page_size=10)
         assert total == 2
 
     @pytest.mark.asyncio
@@ -184,7 +185,7 @@ class TestConversationRepository:
         await db_session.commit()
 
         # 删除后列表为空
-        convs, total = await repo.list_by_user(user_id)
+        _convs, total = await repo.list_by_user(user_id)
         assert total == 0
 
     @pytest.mark.asyncio
@@ -198,7 +199,9 @@ class TestConversationRepository:
         await db_session.commit()
 
         await msg_repo.create(conversation_id=conv.id, role="user", content="你好")
-        await msg_repo.create(conversation_id=conv.id, role="assistant", content="你好！有什么可以帮你的？")
+        await msg_repo.create(
+            conversation_id=conv.id, role="assistant", content="你好！有什么可以帮你的？"
+        )
         await db_session.commit()
 
         await conv_repo.update_message_count(conv.id)
@@ -224,8 +227,13 @@ class TestMessageRepository:
         await db_session.commit()
 
         await msg_repo.create(conversation_id=conv.id, role="user", content="问题1")
-        await msg_repo.create(conversation_id=conv.id, role="assistant", content="回答1",
-                              citations=[{"idx": 1}], token_usage={"total": 50})
+        await msg_repo.create(
+            conversation_id=conv.id,
+            role="assistant",
+            content="回答1",
+            citations=[{"idx": 1}],
+            token_usage={"total": 50},
+        )
         await db_session.commit()
 
         msgs = await msg_repo.get_by_conversation(conv.id)

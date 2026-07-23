@@ -2,17 +2,17 @@
 文档 ORM 模型
 """
 
-from sqlalchemy import BigInteger, Integer, String, Text, Enum as SAEnum, JSON
+import enum
+
+from sqlalchemy import JSON, BigInteger, ForeignKey, Integer, String, Text
+from sqlalchemy import Enum as SAEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import ForeignKey
 
 from app.models.database.base import Base, TimestampMixin, UUIDMixin
 
-import enum
 
-
-class DocType(str, enum.Enum):
+class DocType(enum.StrEnum):
     PDF = "pdf"
     DOCX = "docx"
     MD = "md"
@@ -21,7 +21,7 @@ class DocType(str, enum.Enum):
     IMAGE = "image"
 
 
-class DocStatus(str, enum.Enum):
+class DocStatus(enum.StrEnum):
     PENDING = "pending"
     PROCESSING = "processing"
     COMPLETED = "completed"
@@ -73,15 +73,17 @@ class DocumentChunk(Base, UUIDMixin):
     )
     chunk_index: Mapped[int] = mapped_column(Integer, nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
+    # jieba 分词结果（空格连接），供 PG 生成 tsvector 做 BM25 检索
+    content_segmented: Mapped[str | None] = mapped_column(Text, default=None)
     token_count: Mapped[int | None] = mapped_column(Integer, default=None)
     page_number: Mapped[int | None] = mapped_column(Integer, default=None)
     section_title: Mapped[str | None] = mapped_column(String(500), default=None)
     metadata_: Mapped[dict] = mapped_column(JSON, default=dict, name="metadata")
     created_at: Mapped[str] = mapped_column(
         String(50),
-        default=lambda: __import__("datetime").datetime.now(
-            __import__("datetime").timezone.utc
-        ).isoformat(),
+        default=lambda: (
+            __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat()
+        ),
     )
 
     # 关系

@@ -1,7 +1,8 @@
 """Prompt 模板与查询改写单元测试"""
 
-import pytest
 from unittest.mock import AsyncMock
+
+import pytest
 
 from app.prompts.registry import PromptRegistry, PromptTemplate
 from app.rag.query_rewriter import QueryRewriter

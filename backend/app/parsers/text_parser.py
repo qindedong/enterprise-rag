@@ -23,7 +23,7 @@ class TextParser(BaseParser):
         # 尝试多种编码
         for encoding in ["utf-8", "gbk", "gb2312", "latin-1"]:
             try:
-                with open(path, "r", encoding=encoding) as f:
+                with open(path, encoding=encoding) as f:
                     content = f.read()
                 if content.strip():
                     return content

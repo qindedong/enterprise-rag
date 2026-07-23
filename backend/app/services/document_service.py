@@ -7,18 +7,23 @@
 import hashlib
 import json
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from uuid import UUID
 
 from qdrant_client.models import PointStruct
 
 from app.core.config import get_settings
-from app.core.exceptions import NotFoundException, ValidationException, DuplicateException, ProcessingException
+from app.core.exceptions import (
+    DuplicateException,
+    NotFoundException,
+    ProcessingException,
+    ValidationException,
+)
 from app.core.logger import get_logger
 from app.infrastructure.embedding_client import EmbeddingClient
 from app.infrastructure.qdrant_client import QdrantStore
-from app.models.database.document import DocStatus, DocType
+from app.models.database.document import DocStatus
 from app.parsers.registry import ParserRegistry
 from app.repositories.document_repository import ChunkRepository, DocumentRepository
 from app.utils.text_splitter import TextSplitter
@@ -84,18 +89,23 @@ class DocumentService:
         if mime_type not in ALLOWED_MIME_TYPES:
             # 尝试根据文件扩展名推断
             ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
-            EXT_TO_MIME = {"pdf": "application/pdf", "md": "text/markdown", "txt": "text/plain", "markdown": "text/markdown"}
-            mime_type = EXT_TO_MIME.get(ext, mime_type)
+            ext_to_mime = {
+                "pdf": "application/pdf",
+                "md": "text/markdown",
+                "txt": "text/plain",
+                "markdown": "text/markdown",
+            }
+            mime_type = ext_to_mime.get(ext, mime_type)
 
         if mime_type not in ALLOWED_MIME_TYPES:
-            raise ValidationException(
-                f"不支持的文件类型: {mime_type}。支持: PDF, Markdown, TXT"
-            )
+            raise ValidationException(f"不支持的文件类型: {mime_type}。支持: PDF, Markdown, TXT")
 
         file_size = len(content)
         max_bytes = settings.MAX_FILE_SIZE_MB * 1024 * 1024
         if file_size > max_bytes:
-            raise ValidationException(f"文件过大 ({file_size / 1024 / 1024:.1f}MB)，最大 {settings.MAX_FILE_SIZE_MB}MB")
+            raise ValidationException(
+                f"文件过大 ({file_size / 1024 / 1024:.1f}MB)，最大 {settings.MAX_FILE_SIZE_MB}MB"
+            )
 
         # 2. 计算内容哈希（去重）
         content_hash = hashlib.sha256(content).hexdigest()
@@ -125,24 +135,30 @@ class DocumentService:
             logger.info(f"文档已推入处理队列: {doc.id}")
         except Exception as e:
             logger.error(f"推入队列失败: {doc.id}, 原因: {e}", exc_info=True)
-            await self.doc_repo.update_status(doc.id, DocStatus.FAILED, error_message=f"推入队列失败: {e}")
-            raise ProcessingException(f"文档处理失败: {e}")
+            await self.doc_repo.update_status(
+                doc.id, DocStatus.FAILED, error_message=f"推入队列失败: {e}"
+            )
+            raise ProcessingException(f"文档处理失败: {e}") from e
 
         # 6. 返回文档信息（状态为 pending）
         return self._to_response(doc)
 
-    async def _enqueue_for_processing(self, doc_id: UUID, kb_id: UUID, file_path: str, file_ext: str) -> None:
+    async def _enqueue_for_processing(
+        self, doc_id: UUID, kb_id: UUID, file_path: str, file_ext: str
+    ) -> None:
         """将文档处理任务推入 Redis 队列"""
         import redis.asyncio as aioredis
 
         try:
             r = aioredis.from_url(settings.REDIS_URL, decode_responses=True)
-            task = json.dumps({
-                "doc_id": str(doc_id),
-                "kb_id": str(kb_id),
-                "file_path": file_path,
-                "file_type": file_ext,
-            })
+            task = json.dumps(
+                {
+                    "doc_id": str(doc_id),
+                    "kb_id": str(kb_id),
+                    "file_path": file_path,
+                    "file_type": file_ext,
+                }
+            )
             await r.lpush("rag:doc_process_queue", task)
             await r.aclose()
         except Exception:
@@ -150,40 +166,48 @@ class DocumentService:
             logger.warning("Redis 不可用，降级为同步处理模式")
             await self._process_document(doc_id, kb_id, file_path, file_ext)
 
-    async def _process_document(self, doc_id: UUID, kb_id: UUID, file_path: str, file_ext: str) -> None:
+    async def _process_document(
+        self, doc_id: UUID, kb_id: UUID, file_path: str, file_ext: str
+    ) -> None:
         """处理文档：解析 → 分块 → 向量化 → 写入 Qdrant"""
         await self.doc_repo.update_status(doc_id, DocStatus.PROCESSING)
 
         # Step 1: 解析
         logger.info(f"开始解析文档: {doc_id}")
         try:
-            parser = ParserRegistry.get_parser(f"application/{file_ext}" if file_ext == "pdf" else f"text/{file_ext}")
+            parser = ParserRegistry.get_parser(
+                f"application/{file_ext}" if file_ext == "pdf" else f"text/{file_ext}"
+            )
             raw_text = parser.parse(file_path)
-        except Exception as e:
+        except Exception:
             # 尝试通用解析
             from app.parsers.text_parser import TextParser
+
             raw_text = TextParser().parse(file_path)
 
         if not raw_text or not raw_text.strip():
             raise ProcessingException("未能提取到有效的文字内容")
 
         # Step 2: 分块
-        from app.repositories.kb_repository import KBRepository
         # 这里简化：使用默认分块参数
-        splitter = TextSplitter(chunk_size=settings.CHUNK_SIZE, chunk_overlap=settings.CHUNK_OVERLAP)
+        splitter = TextSplitter(
+            chunk_size=settings.CHUNK_SIZE, chunk_overlap=settings.CHUNK_OVERLAP
+        )
         result = splitter.split(raw_text)
         if result.total_chunks == 0:
             raise ProcessingException("分块结果为空")
 
         # Step 3: 插入 Chunk 记录
-        chunks = await self.chunk_repo.bulk_insert(doc_id, kb_id, result.chunks, result.token_counts)
+        chunks = await self.chunk_repo.bulk_insert(
+            doc_id, kb_id, result.chunks, result.token_counts
+        )
 
         # Step 4: 向量化
         embeddings = await self.embedding_client.embed_batch(result.chunks)
 
         # Step 5: 写入 Qdrant
         points = []
-        for chunk, embedding in zip(chunks, embeddings):
+        for chunk, embedding in zip(chunks, embeddings, strict=False):
             point = PointStruct(
                 id=str(chunk.id),
                 vector=embedding,
@@ -195,7 +219,7 @@ class DocumentService:
                     "content": chunk.content[:1000],  # 只存储前 1000 字符供预览
                     "page_number": chunk.page_number,
                     "section_title": chunk.section_title,
-                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "created_at": datetime.now(UTC).isoformat(),
                 },
             )
             points.append(point)
@@ -203,7 +227,9 @@ class DocumentService:
         self.qdrant_store.upsert(points)
 
         # Step 6: 更新状态
-        await self.doc_repo.update_status(doc_id, DocStatus.COMPLETED, chunk_count=result.total_chunks)
+        await self.doc_repo.update_status(
+            doc_id, DocStatus.COMPLETED, chunk_count=result.total_chunks
+        )
         logger.info(f"文档处理完成: {doc_id}, 分块数: {result.total_chunks}")
 
     def _save_file(self, kb_id: UUID, filename: str, content: bytes) -> str:
@@ -212,7 +238,7 @@ class DocumentService:
         os.makedirs(upload_dir, exist_ok=True)
 
         # 防止文件名冲突
-        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+        timestamp = datetime.now(UTC).strftime("%Y%m%d%H%M%S")
         safe_name = f"{timestamp}_{filename}"
         file_path = upload_dir / safe_name
 
@@ -292,11 +318,11 @@ class DocumentService:
     def _to_response(self, doc) -> dict:
         """将 Document 对象转为 API 响应字典"""
         # 兼容文件类型可能是 Enum 或者 str
-        ft = getattr(doc, 'file_type', None)
-        if ft is not None and hasattr(ft, 'value'):
+        ft = getattr(doc, "file_type", None)
+        if ft is not None and hasattr(ft, "value"):
             ft = ft.value
-        st = getattr(doc, 'status', None)
-        if st is not None and hasattr(st, 'value'):
+        st = getattr(doc, "status", None)
+        if st is not None and hasattr(st, "value"):
             st = st.value
         return {
             "id": str(doc.id),

@@ -5,7 +5,14 @@ Qdrant 向量数据库客户端
 """
 
 from qdrant_client import QdrantClient
-from qdrant_client.models import Distance, VectorParams, PointStruct, Filter, FieldCondition, MatchValue
+from qdrant_client.models import (
+    Distance,
+    FieldCondition,
+    Filter,
+    MatchValue,
+    PointStruct,
+    VectorParams,
+)
 
 from app.core.config import get_settings
 from app.core.exceptions import RetrievalException
@@ -55,7 +62,7 @@ class QdrantStore:
             )
             logger.info(f"Qdrant 写入完成: {len(points)} 个点")
         except Exception as e:
-            raise RetrievalException(f"向量写入失败: {e}")
+            raise RetrievalException(f"向量写入失败: {e}") from e
 
     def search(
         self,
@@ -93,7 +100,7 @@ class QdrantStore:
                 for hit in results
             ]
         except Exception as e:
-            raise RetrievalException(f"向量检索失败: {e}")
+            raise RetrievalException(f"向量检索失败: {e}") from e
 
     def delete_by_document(self, document_id: str) -> None:
         """删除指定文档的所有向量"""

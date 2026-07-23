@@ -2,18 +2,19 @@
 知识库 ORM 模型
 """
 
-from sqlalchemy import Integer, String, Text, Enum as SAEnum, JSON
+import enum
+
+from sqlalchemy import JSON, ForeignKey, Integer, String, Text
+from sqlalchemy import Enum as SAEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import ForeignKey
 
 from app.models.database.base import Base, TimestampMixin, UUIDMixin
 
-import enum
 
-
-class KBStatus(str, enum.Enum):
+class KBStatus(enum.StrEnum):
     """知识库状态"""
+
     ACTIVE = "active"
     ARCHIVED = "archived"
     DELETED = "deleted"
@@ -50,17 +51,24 @@ class KnowledgeBase(Base, UUIDMixin, TimestampMixin):
 
     # 关系
     owner = relationship("User", back_populates="knowledge_bases")
-    members = relationship("KBMember", back_populates="knowledge_base", cascade="all, delete-orphan")
-    documents = relationship("Document", back_populates="knowledge_base", cascade="all, delete-orphan")
-    chunks = relationship("DocumentChunk", back_populates="knowledge_base", cascade="all, delete-orphan")
+    members = relationship(
+        "KBMember", back_populates="knowledge_base", cascade="all, delete-orphan"
+    )
+    documents = relationship(
+        "Document", back_populates="knowledge_base", cascade="all, delete-orphan"
+    )
+    chunks = relationship(
+        "DocumentChunk", back_populates="knowledge_base", cascade="all, delete-orphan"
+    )
     conversations = relationship("Conversation", back_populates="knowledge_base")
 
     def __repr__(self) -> str:
         return f"<KnowledgeBase {self.name}>"
 
 
-class MemberRole(str, enum.Enum):
+class MemberRole(enum.StrEnum):
     """知识库成员角色"""
+
     ADMIN = "admin"
     EDITOR = "editor"
     VIEWER = "viewer"

@@ -14,14 +14,16 @@
 """
 
 from functools import lru_cache
+
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
     """全局配置，按职责分为多个配置组"""
+
     # ===== 应用基础配置 =====
     APP_NAME: str = "企业知识库RAG"
-    APP_VERSION: str = "0.1.0"
+    APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
     LOG_LEVEL: str = "INFO"
 
@@ -76,7 +78,7 @@ class Settings(BaseSettings):
     }
 
 
-@lru_cache()
+@lru_cache
 def get_settings() -> Settings:
     """获取全局配置（单例模式）"""
     return Settings()

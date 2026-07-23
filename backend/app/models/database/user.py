@@ -2,19 +2,19 @@
 用户 ORM 模型
 """
 
+import enum
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, String, Enum as SAEnum
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Boolean, DateTime, String
+from sqlalchemy import Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.database.base import Base, TimestampMixin, UUIDMixin
 
-import enum
 
-
-class UserRole(str, enum.Enum):
+class UserRole(enum.StrEnum):
     """用户角色"""
+
     SUPER_ADMIN = "super_admin"
     ADMIN = "admin"
     USER = "user"

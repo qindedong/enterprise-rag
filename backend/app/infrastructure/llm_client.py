@@ -5,7 +5,7 @@ LLM 服务客户端
 支持流式生成（SSE）和非流式生成，自动重试。
 """
 
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 from openai import AsyncOpenAI
 
@@ -61,7 +61,7 @@ class LLMClient:
                 "finish_reason": choice.finish_reason,
             }
         except Exception as e:
-            raise LLMException(f"LLM 调用失败: {e}")
+            raise LLMException(f"LLM 调用失败: {e}") from e
 
     async def generate_stream(self, messages: list[dict]) -> AsyncIterator[str]:
         """
@@ -85,4 +85,4 @@ class LLMClient:
                 if chunk.choices and chunk.choices[0].delta.content:
                     yield chunk.choices[0].delta.content
         except Exception as e:
-            raise LLMException(f"LLM 流式调用失败: {e}")
+            raise LLMException(f"LLM 流式调用失败: {e}") from e

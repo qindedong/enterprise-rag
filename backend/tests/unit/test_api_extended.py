@@ -1,10 +1,6 @@
 """API 层补充测试"""
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
-from httpx import AsyncClient, ASGITransport
-
-from app.main import app
 
 
 @pytest.mark.unit

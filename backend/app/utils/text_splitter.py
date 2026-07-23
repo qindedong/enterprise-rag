@@ -6,6 +6,7 @@
 """
 
 from dataclasses import dataclass
+from typing import ClassVar
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
@@ -17,6 +18,7 @@ logger = get_logger(__name__)
 @dataclass
 class ChunkResult:
     """分块结果"""
+
     chunks: list[str]
     token_counts: list[int]
     total_chunks: int
@@ -29,16 +31,16 @@ class TextSplitter:
     """
 
     # 标准分隔符（按优先级排序）
-    DEFAULT_SEPARATORS: list[str] = [
-        "\n## ",       # Markdown H2
-        "\n### ",      # Markdown H3
-        "\n#### ",     # Markdown H4
-        "\n",          # 段落换行
-        "。",          # 中文句号
-        ". ",          # 英文句号
-        "；",          # 中文分号
-        "; ",          # 英文分号
-        " ",           # 空格（最后手段）
+    DEFAULT_SEPARATORS: ClassVar[list[str]] = [
+        "\n## ",  # Markdown H2
+        "\n### ",  # Markdown H3
+        "\n#### ",  # Markdown H4
+        "\n",  # 段落换行
+        "。",  # 中文句号
+        ". ",  # 英文句号
+        "；",  # 中文分号
+        "; ",  # 英文分号
+        " ",  # 空格（最后手段）
     ]
 
     def __init__(self, chunk_size: int = 500, chunk_overlap: int = 100):
@@ -89,7 +91,7 @@ class TextSplitter:
 
         logger.info(
             f"分块完成: 文本长度={len(text)} → {len(chunks)} 个分块, "
-            f"平均 Token 数={sum(token_counts)//max(len(token_counts), 1)}"
+            f"平均 Token 数={sum(token_counts) // max(len(token_counts), 1)}"
         )
 
         return ChunkResult(chunks=chunks, token_counts=token_counts, total_chunks=len(chunks))
@@ -112,7 +114,9 @@ class TextSplitter:
             validated.append(chunk)
 
         if len(validated) < len(chunks):
-            logger.info(f"分块质量校验: {len(chunks)} → {len(validated)} 个 (过滤 {len(chunks) - len(validated)} 个)")
+            logger.info(
+                f"分块质量校验: {len(chunks)} → {len(validated)} 个 (过滤 {len(chunks) - len(validated)} 个)"
+            )
 
         return validated
 
@@ -121,13 +125,15 @@ class TextSplitter:
         """Token 计数 — 使用 tiktoken cl100k_base 编码（兼容 text-embedding-3）"""
         try:
             import tiktoken
+
             encoder = tiktoken.get_encoding("cl100k_base")
             return len(encoder.encode(text))
         except Exception:
             # 回退：中文字符 ≈ 1.5 tokens，英文单词 ≈ 1.3 tokens
             import re
-            chinese_chars = len(re.findall(r'[一-鿿]', text))
-            english_words = len(re.findall(r'[a-zA-Z]+', text))
+
+            chinese_chars = len(re.findall(r"[一-鿿]", text))
+            english_words = len(re.findall(r"[a-zA-Z]+", text))
             return int(chinese_chars * 1.5 + english_words * 1.3)
 
 

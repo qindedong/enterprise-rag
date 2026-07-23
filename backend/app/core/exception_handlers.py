@@ -38,8 +38,7 @@ async def app_exception_handler(request: Request, exc: AppException) -> JSONResp
 async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """兜底异常处理 — 捕获所有未预期的异常"""
     logger.error(
-        f"未处理异常: {type(exc).__name__}: {str(exc)} | "
-        f"请求: {request.method} {request.url.path}",
+        f"未处理异常: {type(exc).__name__}: {exc!s} | 请求: {request.method} {request.url.path}",
         exc_info=True,
     )
     return JSONResponse(

@@ -1,17 +1,14 @@
 """API + Service 层纵深覆盖测试 — 纯 Mock 版（无外部依赖）"""
 
-import pytest
-import os
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
-from httpx import AsyncClient, ASGITransport
-from app.main import app
-
+import pytest
 
 # ============================================================
 # AuthService — login / refresh / get_current_user 全覆盖
 # ============================================================
+
 
 @pytest.mark.unit
 class TestAuthServiceCoverage:
@@ -20,8 +17,8 @@ class TestAuthServiceCoverage:
     @pytest.mark.asyncio
     async def test_login_inactive_user_raises(self):
         """测试：已禁用用户登录"""
-        from app.services.auth_service import AuthService
         from app.core.exceptions import UnauthorizedException
+        from app.services.auth_service import AuthService
 
         mock_user = MagicMock()
         mock_user.hashed_password = "hashed"
@@ -55,7 +52,9 @@ class TestAuthServiceCoverage:
 
         with patch("app.services.auth_service.verify_password", return_value=True):
             with patch("app.services.auth_service.create_access_token", return_value="access"):
-                with patch("app.services.auth_service.create_refresh_token", return_value="refresh"):
+                with patch(
+                    "app.services.auth_service.create_refresh_token", return_value="refresh"
+                ):
                     service = AuthService(user_repo)
                     result = await service.login("alice@test.com", "any")
                     assert result["access_token"] == "access"
@@ -76,9 +75,14 @@ class TestAuthServiceCoverage:
         user_repo = AsyncMock()
         user_repo.find_by_id = AsyncMock(return_value=mock_user)
 
-        with patch("app.services.auth_service.decode_token", return_value={"sub": str(uuid4()), "type": "refresh"}):
+        with patch(
+            "app.services.auth_service.decode_token",
+            return_value={"sub": str(uuid4()), "type": "refresh"},
+        ):
             with patch("app.services.auth_service.create_access_token", return_value="new_access"):
-                with patch("app.services.auth_service.create_refresh_token", return_value="new_refresh"):
+                with patch(
+                    "app.services.auth_service.create_refresh_token", return_value="new_refresh"
+                ):
                     service = AuthService(user_repo)
                     result = await service.refresh_token("valid_refresh")
                     assert result["access_token"] == "new_access"
@@ -105,6 +109,7 @@ class TestAuthServiceCoverage:
 # RAGService 流式全覆盖
 # ============================================================
 
+
 @pytest.mark.unit
 class TestRAGServiceStream:
     """RAGService ask_stream 完整测试"""
@@ -130,9 +135,16 @@ class TestRAGServiceStream:
         from app.services.rag_service import RAGService
 
         mock_retrieval = AsyncMock()
-        mock_retrieval.retrieve = AsyncMock(return_value=[
-            {"document_title": "手册", "content": "内容", "chunk_id": str(uuid4()), "score": 0.8}
-        ])
+        mock_retrieval.retrieve = AsyncMock(
+            return_value=[
+                {
+                    "document_title": "手册",
+                    "content": "内容",
+                    "chunk_id": str(uuid4()),
+                    "score": 0.8,
+                }
+            ]
+        )
 
         mock_llm = AsyncMock()
 
@@ -157,9 +169,16 @@ class TestRAGServiceStream:
         from app.services.rag_service import RAGService
 
         mock_retrieval = AsyncMock()
-        mock_retrieval.retrieve = AsyncMock(return_value=[
-            {"document_title": "手册", "content": "内容", "chunk_id": str(uuid4()), "score": 0.8}
-        ])
+        mock_retrieval.retrieve = AsyncMock(
+            return_value=[
+                {
+                    "document_title": "手册",
+                    "content": "内容",
+                    "chunk_id": str(uuid4()),
+                    "score": 0.8,
+                }
+            ]
+        )
 
         async def failing_stream(*args, **kwargs):
             raise RuntimeError("LLM 崩溃")
@@ -180,14 +199,15 @@ class TestRAGServiceStream:
 # DocumentService — 纯 Mock 无网络
 # ============================================================
 
+
 @pytest.mark.unit
 class TestDocumentServiceDeep:
     """DocumentService 补充"""
 
     def test_to_response_enum(self):
         """测试：_to_response Enum 处理"""
+        from app.models.database.document import DocStatus, DocType
         from app.services.document_service import DocumentService
-        from app.models.database.document import DocType, DocStatus
 
         mock_doc = MagicMock()
         mock_doc.id = uuid4()
@@ -212,6 +232,7 @@ class TestDocumentServiceDeep:
 # ============================================================
 # ConversationService — create_or_get 复用 / get_messages
 # ============================================================
+
 
 @pytest.mark.unit
 class TestConversationServiceCoverage:
@@ -270,6 +291,7 @@ class TestConversationServiceCoverage:
 # ============================================================
 # KBService — 全部路径
 # ============================================================
+
 
 @pytest.mark.unit
 class TestKBServiceCoverage:

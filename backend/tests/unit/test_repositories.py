@@ -4,14 +4,14 @@ Repository 层单元测试
 测试 UserRepository / KBRepository 的核心查询逻辑.
 """
 
-import pytest
 from uuid import uuid4
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.models.database.user import User, UserRole
-from app.models.database.knowledge_base import KnowledgeBase, KBMember, KBStatus, MemberRole
-from app.repositories.user_repository import UserRepository
+import pytest
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.database.knowledge_base import MemberRole
 from app.repositories.kb_repository import KBRepository
+from app.repositories.user_repository import UserRepository
 
 
 @pytest.mark.unit

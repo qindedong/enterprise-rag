@@ -1,11 +1,12 @@
 """Infrastructure 与安全工具层单元测试"""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
+
+from app.core.exceptions import RetrievalException
 from app.infrastructure.embedding_client import EmbeddingClient
 from app.infrastructure.qdrant_client import QdrantStore
-from app.core.exceptions import RetrievalException
 
 
 @pytest.mark.unit
@@ -22,9 +23,7 @@ class TestLLMClient:
         mock_choice.message.content = "测试回复"
         mock_choice.finish_reason = "stop"
         mock_response.choices = [mock_choice]
-        mock_response.usage = MagicMock(
-            prompt_tokens=10, completion_tokens=5, total_tokens=15
-        )
+        mock_response.usage = MagicMock(prompt_tokens=10, completion_tokens=5, total_tokens=15)
 
         with patch("app.infrastructure.llm_client.AsyncOpenAI") as mock_openai:
             mock_instance = AsyncMock()
@@ -52,9 +51,7 @@ class TestLLMClient:
 
         with patch("app.infrastructure.llm_client.AsyncOpenAI") as mock_openai:
             mock_instance = AsyncMock()
-            mock_instance.chat.completions.create = AsyncMock(
-                return_value=mock_stream()
-            )
+            mock_instance.chat.completions.create = AsyncMock(return_value=mock_stream())
             mock_openai.return_value = mock_instance
 
             client = LLMClient()
@@ -98,7 +95,7 @@ class TestEmbeddingClient:
                 EMBEDDING_BATCH_SIZE=32,
             )
 
-            with patch("openai.AsyncOpenAI") as mock_openai:
+            with patch("openai.AsyncOpenAI"):
                 client = EmbeddingClient()
                 assert client._use_local is False
 
@@ -107,9 +104,7 @@ class TestEmbeddingClient:
         """测试：单条文本向量化"""
         mock_model = MagicMock()
         mock_model.get_sentence_embedding_dimension.return_value = 512
-        mock_model.encode = MagicMock(
-            return_value=MagicMock(tolist=lambda: [[0.1, 0.2, 0.3]])
-        )
+        mock_model.encode = MagicMock(return_value=MagicMock(tolist=lambda: [[0.1, 0.2, 0.3]]))
 
         with patch("app.infrastructure.embedding_client._get_local_model", return_value=mock_model):
             with patch("app.infrastructure.embedding_client.get_settings") as mock_settings:
@@ -163,9 +158,9 @@ class TestQdrantStore:
         }
 
         mock_client = MagicMock()
-        mock_client.get_collections.return_value = MagicMock(collections=[
-            MagicMock(name="test_collection")
-        ])
+        mock_client.get_collections.return_value = MagicMock(
+            collections=[MagicMock(name="test_collection")]
+        )
         mock_client.search.return_value = [mock_hit]
 
         with patch("app.infrastructure.qdrant_client.QdrantClient", return_value=mock_client):
@@ -185,9 +180,9 @@ class TestQdrantStore:
     def test_search_failure_raises(self):
         """测试：Qdrant 检索失败"""
         mock_client = MagicMock()
-        mock_client.get_collections.return_value = MagicMock(collections=[
-            MagicMock(name="test_collection")
-        ])
+        mock_client.get_collections.return_value = MagicMock(
+            collections=[MagicMock(name="test_collection")]
+        )
         mock_client.search.side_effect = Exception("连接超时")
 
         with patch("app.infrastructure.qdrant_client.QdrantClient", return_value=mock_client):
@@ -205,9 +200,9 @@ class TestQdrantStore:
     def test_delete_by_document(self):
         """测试：按文档 ID 删除向量"""
         mock_client = MagicMock()
-        mock_client.get_collections.return_value = MagicMock(collections=[
-            MagicMock(name="test_collection")
-        ])
+        mock_client.get_collections.return_value = MagicMock(
+            collections=[MagicMock(name="test_collection")]
+        )
 
         with patch("app.infrastructure.qdrant_client.QdrantClient", return_value=mock_client):
             with patch("app.infrastructure.qdrant_client.get_settings") as mock_settings:
@@ -224,9 +219,9 @@ class TestQdrantStore:
     def test_delete_by_kb(self):
         """测试：按知识库 ID 删除向量"""
         mock_client = MagicMock()
-        mock_client.get_collections.return_value = MagicMock(collections=[
-            MagicMock(name="test_collection")
-        ])
+        mock_client.get_collections.return_value = MagicMock(
+            collections=[MagicMock(name="test_collection")]
+        )
 
         with patch("app.infrastructure.qdrant_client.QdrantClient", return_value=mock_client):
             with patch("app.infrastructure.qdrant_client.get_settings") as mock_settings:
@@ -300,7 +295,9 @@ class TestResponseModels:
     def test_paginated_response(self):
         """测试：PaginatedResponse"""
         from app.models.request_response.response import (
-            APIResponse, PageInfo, PaginatedData, PaginatedResponse,
+            PageInfo,
+            PaginatedData,
+            PaginatedResponse,
         )
 
         page_info = PageInfo(total=100, page=1, page_size=20)

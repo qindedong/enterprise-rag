@@ -105,7 +105,7 @@ class EmbeddingClient:
         all_embeddings: list[list[float]] = []
 
         for i in range(0, len(texts), self.batch_size):
-            batch = texts[i:i + self.batch_size]
+            batch = texts[i : i + self.batch_size]
 
             for attempt in range(max_retries):
                 try:
@@ -122,7 +122,7 @@ class EmbeddingClient:
                     if attempt == max_retries - 1:
                         raise EmbeddingException(
                             f"Embedding 服务调用失败（已重试 {max_retries} 次）: {e}"
-                        )
+                        ) from e
                     await asyncio.sleep(2**attempt)
 
         logger.info(f"远程向量化完成: {len(texts)} 条 → {len(all_embeddings)} 个向量")

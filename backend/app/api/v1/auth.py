@@ -9,20 +9,22 @@
 """
 
 from fastapi import APIRouter, Depends
+from pydantic import BaseModel, Field
 
 from app.api.deps import get_auth_service, get_current_user
 from app.models.database.user import User
 from app.models.request_response.response import APIResponse
 from app.services.auth_service import AuthService
-from pydantic import BaseModel, Field, EmailStr
 
 router = APIRouter(prefix="/auth", tags=["认证"])
 
 
 # ===== 请求模型 =====
 
+
 class RegisterRequest(BaseModel):
     """用户注册请求"""
+
     username: str = Field(..., min_length=3, max_length=50, description="用户名")
     email: str = Field(..., description="邮箱地址")
     password: str = Field(..., min_length=8, max_length=128, description="密码")
@@ -31,16 +33,19 @@ class RegisterRequest(BaseModel):
 
 class LoginRequest(BaseModel):
     """用户登录请求"""
+
     email: str = Field(..., description="邮箱地址")
     password: str = Field(..., description="密码")
 
 
 class RefreshRequest(BaseModel):
     """Token 刷新请求"""
+
     refresh_token: str = Field(..., description="Refresh Token")
 
 
 # ===== 接口 =====
+
 
 @router.post("/register", summary="用户注册", status_code=201)
 async def register(
@@ -100,7 +105,9 @@ async def get_me(
             "display_name": current_user.display_name,
             "role": current_user.role.value if current_user.role else "user",
             "is_active": current_user.is_active,
-            "last_login_at": current_user.last_login_at.isoformat() if current_user.last_login_at else None,
+            "last_login_at": current_user.last_login_at.isoformat()
+            if current_user.last_login_at
+            else None,
             "created_at": current_user.created_at.isoformat() if current_user.created_at else None,
         }
     )

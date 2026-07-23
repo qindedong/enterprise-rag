@@ -1,11 +1,12 @@
 """
 API v1 路由汇总
 """
+
 from fastapi import APIRouter
 
 from app.api.v1.auth import router as auth_router
-from app.api.v1.knowledge_bases import router as kb_router
 from app.api.v1.documents import router as doc_router
+from app.api.v1.knowledge_bases import router as kb_router
 from app.api.v1.rag import router as rag_router
 
 api_router = APIRouter(prefix="/api/v1")

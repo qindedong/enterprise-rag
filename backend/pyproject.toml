@@ -7,7 +7,7 @@ packages = ["app"]
 
 [project]
 name = "enterprise-rag"
-version = "0.1.0"
+version = "1.0.0"
 description = "企业级智能知识库 RAG 系统"
 readme = "README.md"
 license = {text = "MIT"}
@@ -28,7 +28,7 @@ dependencies = [
     "python-jose[cryptography]>=3.3.0",
     "bcrypt>=4.2.0",
     "python-multipart>=0.0.9",
-    "qdrant-client>=1.9.0",
+    "qdrant-client>=1.9.0,<1.10",  # Qdrant server 1.9.x；client 1.10+ 移除了 search()，主版本需对齐
     "openai>=1.30.0",
     "tiktoken>=0.7.0",
     "pymupdf>=1.24.0",
@@ -73,7 +73,21 @@ select = [
     "SIM", # flake8-simplify 代码简化
     "RUF", # Ruff 专属规则
 ]
-ignore = ["E501"]
+ignore = [
+    "E501",    # 行宽由 formatter 处理
+    "RUF001",  # 中文字符串中的全角标点（本项目为中文项目，属预期）
+    "RUF002",  # 中文 docstring 中的全角标点
+    "RUF003",  # 中文注释中的全角标点
+    "B008",    # FastAPI 惯用法：Depends(...) 作默认参数
+    "N818",    # 异常类 AppException 命名为公共 API，改名属于破坏性变更
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [
+    "SIM117",  # 测试中的嵌套 with 提高可读性
+    "SIM115",  # 测试读取 fixture 文件，生命周期由进程管理
+    "B017",    # 测试需要断言宽泛异常
+]
 
 [tool.ruff.lint.isort]
 known-first-party = ["app"]

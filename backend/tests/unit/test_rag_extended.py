@@ -1,12 +1,12 @@
 """RAG 管线与重排序器单元测试"""
 
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
+
+import pytest
 
 from app.rag.pipeline import RetrievalPipeline
 from app.rag.reranker import Reranker
-from app.prompts.registry import PromptRegistry, PromptTemplate
 
 
 @pytest.mark.unit
@@ -39,8 +39,7 @@ class TestReranker:
         """测试：只返回 top_k 条"""
         reranker = Reranker()
         candidates = [
-            {"id": str(i), "score": float(i) / 100, "content": f"text_{i}"}
-            for i in range(20)
+            {"id": str(i), "score": float(i) / 100, "content": f"text_{i}"} for i in range(20)
         ]
         result = await reranker.rerank("query", candidates, top_k=5)
         assert len(result) == 5
@@ -52,7 +51,7 @@ class TestReranker:
         candidates = [
             {"id": "1", "score": 0.9, "content": "完全相同的文档"},
             {"id": "2", "score": 0.8, "content": "完全相同的文档"},  # 相同内容
-            {"id": "3", "score": 0.7, "content": "不同的文档"},       # 不同内容
+            {"id": "3", "score": 0.7, "content": "不同的文档"},  # 不同内容
         ]
         result = await reranker.rerank("query", candidates, top_k=5)
         # 重复的被过滤
@@ -90,7 +89,12 @@ class TestRetrievalPipeline:
         mock_embedding.embed = AsyncMock(return_value=[0.1] * 512)
 
         candidates = [
-            {"id": str(i), "score": 0.9 - i * 0.01, "content": f"doc_{i}", "document_title": f"文件_{i}"}
+            {
+                "id": str(i),
+                "score": 0.9 - i * 0.01,
+                "content": f"doc_{i}",
+                "document_title": f"文件_{i}",
+            }
             for i in range(50)
         ]
         mock_qdrant = MagicMock()
@@ -111,4 +115,3 @@ class TestRetrievalPipeline:
         mock_qdrant.search.assert_called_once()
         call_args = mock_qdrant.search.call_args.kwargs
         assert call_args["limit"] == 50
-

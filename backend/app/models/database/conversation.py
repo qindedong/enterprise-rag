@@ -2,33 +2,35 @@
 对话和消息 ORM 模型
 """
 
-from datetime import datetime, timezone
+import enum
+from datetime import UTC, datetime
 
-from sqlalchemy import Integer, String, Text, Enum as SAEnum, DateTime, JSON
+from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Enum as SAEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import ForeignKey
 
 from app.models.database.base import Base, TimestampMixin, UUIDMixin
 
-import enum
 
-
-class ConvStatus(str, enum.Enum):
+class ConvStatus(enum.StrEnum):
     """对话状态"""
+
     ACTIVE = "active"
     ARCHIVED = "archived"
 
 
-class MsgRole(str, enum.Enum):
+class MsgRole(enum.StrEnum):
     """消息角色"""
+
     USER = "user"
     ASSISTANT = "assistant"
     SYSTEM = "system"
 
 
-class MsgFeedback(str, enum.Enum):
+class MsgFeedback(enum.StrEnum):
     """消息反馈"""
+
     POSITIVE = "positive"
     NEGATIVE = "negative"
 
@@ -54,8 +56,12 @@ class Conversation(Base, UUIDMixin, TimestampMixin):
     # 关系
     knowledge_base = relationship("KnowledgeBase", back_populates="conversations")
     user = relationship("User", back_populates="conversations")
-    messages = relationship("Message", back_populates="conversation", cascade="all, delete-orphan",
-                           order_by="Message.created_at")
+    messages = relationship(
+        "Message",
+        back_populates="conversation",
+        cascade="all, delete-orphan",
+        order_by="Message.created_at",
+    )
 
     def __repr__(self) -> str:
         return f"<Conversation {self.id} by {self.user_id}>"
@@ -77,12 +83,11 @@ class Message(Base, UUIDMixin):
     retrieval_docs: Mapped[dict] = mapped_column(JSON, default=list)
     token_usage: Mapped[dict] = mapped_column(JSON, default=dict)
     feedback: Mapped[MsgFeedback | None] = mapped_column(
-        SAEnum(MsgFeedback, name="msg_feedback", create_type=False),
-        default=None, nullable=True
+        SAEnum(MsgFeedback, name="msg_feedback", create_type=False), default=None, nullable=True
     )
     feedback_comment: Mapped[str | None] = mapped_column(Text, default=None)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
     )
 
     # 关系

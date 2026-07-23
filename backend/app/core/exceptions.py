@@ -11,8 +11,6 @@
     raise ValidationException("文件类型不支持")
 """
 
-from typing import Any
-
 
 class AppException(Exception):
     """应用异常基类
@@ -33,6 +31,7 @@ class AppException(Exception):
 
 
 # ===== 客户端异常 (4xx) =====
+
 
 class NotFoundException(AppException):
     """资源不存在异常 (404)
@@ -95,6 +94,7 @@ class ForbiddenException(AppException):
 
 
 # ===== 服务端异常 (5xx) =====
+
 
 class LLMException(AppException):
     """LLM 服务异常 (502)

@@ -12,17 +12,20 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Query, UploadFile
-from fastapi.responses import JSONResponse
 
-from app.api.deps import get_current_user, get_db, get_kb_repository
+from app.api.deps import get_db
 from app.core.logger import get_logger
 from app.infrastructure.embedding_client import EmbeddingClient
 from app.infrastructure.qdrant_client import QdrantStore
-from app.models.request_response.response import APIResponse, PageInfo, PaginatedData, PaginatedResponse
+from app.models.request_response.response import (
+    APIResponse,
+    PageInfo,
+    PaginatedData,
+    PaginatedResponse,
+)
 from app.repositories.document_repository import ChunkRepository, DocumentRepository
 from app.repositories.kb_repository import KBRepository
 from app.services.document_service import DocumentService
-from app.core.exceptions import ValidationException
 
 logger = get_logger(__name__)
 
@@ -71,6 +74,7 @@ async def upload_document(
     kb = await kb_repo.find_by_id(UUID(kb_id))
     if not kb:
         from app.core.exceptions import NotFoundException
+
         raise NotFoundException("知识库", kb_id)
 
     content = await file.read()
@@ -106,7 +110,9 @@ async def list_documents(
         search=search,
     )
     return PaginatedResponse(
-        data=PaginatedData(items=items, page_info=PageInfo(total=total, page=page, page_size=page_size))
+        data=PaginatedData(
+            items=items, page_info=PageInfo(total=total, page=page, page_size=page_size)
+        )
     )
 
 

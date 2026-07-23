@@ -1,12 +1,13 @@
 """认证与知识库模块单元测试"""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID, uuid4
 
+import pytest
+
+from app.core.exceptions import DuplicateException, NotFoundException, UnauthorizedException
 from app.services.auth_service import AuthService
 from app.services.kb_service import KBService
-from app.core.exceptions import DuplicateException, UnauthorizedException, NotFoundException
 
 
 @pytest.mark.unit
@@ -23,7 +24,7 @@ class TestAuthService:
         user_repo.find_by_email.return_value = None
 
         service = AuthService(user_repo)
-        user = await service.register("testuser", "test@example.com", "SecureP123")
+        await service.register("testuser", "test@example.com", "SecureP123")
 
         assert user_repo.create.called
 
@@ -59,7 +60,6 @@ class TestAuthService:
         with pytest.raises(UnauthorizedException):
             await service.login("bad@example.com", "password")
 
-
     @pytest.mark.asyncio
     @patch("app.services.auth_service.verify_password")
     @patch("app.services.auth_service.create_access_token")
@@ -72,7 +72,7 @@ class TestAuthService:
         mock_verify.return_value = True
 
         mock_user = AsyncMock()
-        mock_user.id = UUID('12345678-1234-1234-1234-123456789abc')
+        mock_user.id = UUID("12345678-1234-1234-1234-123456789abc")
         mock_user.username = "testuser"
         mock_user.email = "test@example.com"
         mock_user.display_name = "测试"
@@ -99,20 +99,18 @@ class TestKBService:
     @pytest.mark.asyncio
     async def test_create_success(self, db_session):
         """测试：创建知识库成功"""
-        from uuid import uuid4
 
         kb_repo = AsyncMock()
         kb_repo.find_by_name_and_owner.return_value = None
 
         service = KBService(kb_repo)
-        result = await service.create(name="测试知识库", owner_id=uuid4())
+        await service.create(name="测试知识库", owner_id=uuid4())
 
         assert kb_repo.create.called
 
     @pytest.mark.asyncio
     async def test_create_duplicate_name(self, db_session):
         """测试：知识库名称重复"""
-        from uuid import uuid4
 
         kb_repo = AsyncMock()
         kb_repo.find_by_name_and_owner.return_value = AsyncMock()
@@ -124,7 +122,6 @@ class TestKBService:
     @pytest.mark.asyncio
     async def test_create_invalid_chunk_size(self, db_session):
         """测试：分块大小超出范围"""
-        from uuid import uuid4
 
         kb_repo = AsyncMock()
         kb_repo.find_by_name_and_owner.return_value = None
@@ -136,7 +133,6 @@ class TestKBService:
     @pytest.mark.asyncio
     async def test_get_detail_not_found(self, db_session):
         """测试：获取不存在的知识库详情"""
-        from uuid import uuid4
 
         kb_repo = AsyncMock()
         kb_repo.find_by_id_with_owner.return_value = None
@@ -148,7 +144,6 @@ class TestKBService:
     @pytest.mark.asyncio
     async def test_delete_kb_not_found(self, db_session):
         """测试：删除不存在的知识库"""
-        from uuid import uuid4
 
         kb_repo = AsyncMock()
         kb_repo.find_by_id.return_value = None

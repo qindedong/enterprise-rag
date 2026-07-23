@@ -1,7 +1,8 @@
 """文档解析与分块模块单元测试"""
 
-import tempfile
 import os
+import tempfile
+
 import pytest
 
 from app.parsers.markdown_parser import MarkdownParser

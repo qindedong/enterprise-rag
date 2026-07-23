@@ -4,10 +4,12 @@
 根据文件 MIME 类型自动选择合适的解析器。
 """
 
+from typing import ClassVar
+
 from app.core.logger import get_logger
 from app.parsers.base import BaseParser
-from app.parsers.pdf_parser import PDFParser
 from app.parsers.markdown_parser import MarkdownParser
+from app.parsers.pdf_parser import PDFParser
 from app.parsers.text_parser import TextParser
 
 logger = get_logger(__name__)
@@ -17,7 +19,7 @@ class ParserRegistry:
     """解析器注册中心 — 根据文件类型匹配解析器"""
 
     # MIME 类型 → 解析器实例
-    _parsers: dict[str, BaseParser] = {}
+    _parsers: ClassVar[dict[str, BaseParser]] = {}
 
     @classmethod
     def initialize(cls) -> None:

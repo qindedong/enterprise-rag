@@ -1,17 +1,15 @@
 """核心模块单元测试"""
 
-import pytest
-
-from app.core.config import get_settings, Settings
+from app.core.config import Settings, get_settings
 from app.core.exceptions import (
     AppException,
-    NotFoundException,
-    ValidationException,
     DuplicateException,
-    UnauthorizedException,
     ForbiddenException,
     LLMException,
+    NotFoundException,
     RetrievalException,
+    UnauthorizedException,
+    ValidationException,
 )
 
 

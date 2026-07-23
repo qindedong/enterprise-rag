@@ -2,13 +2,14 @@
 文档数据访问层
 """
 
+from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import func, select, and_, update as sql_update, delete as sql_delete
+from sqlalchemy import and_, func, select
+from sqlalchemy import update as sql_update
 from sqlalchemy.ext.asyncio import AsyncSession
-from datetime import datetime, timezone
 
-from app.models.database.document import Document, DocumentChunk, DocStatus
+from app.models.database.document import DocStatus, Document, DocumentChunk
 
 
 class DocumentRepository:
@@ -28,6 +29,7 @@ class DocumentRepository:
     ) -> Document:
         """创建文档记录"""
         from app.models.database.document import DocType
+
         doc = Document(
             kb_id=kb_id,
             title=title,
@@ -58,8 +60,10 @@ class DocumentRepository:
 
     async def update_status(self, doc_id: UUID, status: DocStatus, **kwargs) -> None:
         """更新文档状态"""
-        values = {"status": status, "updated_at": datetime.now(timezone.utc), **kwargs}
-        await self.session.execute(sql_update(Document).where(Document.id == doc_id).values(**values))
+        values = {"status": status, "updated_at": datetime.now(UTC), **kwargs}
+        await self.session.execute(
+            sql_update(Document).where(Document.id == doc_id).values(**values)
+        )
 
     async def list_by_kb(
         self,
@@ -98,7 +102,7 @@ class DocumentRepository:
         await self.session.execute(
             sql_update(Document)
             .where(Document.id == doc_id)
-            .values(status=DocStatus.DELETED, updated_at=datetime.now(timezone.utc))
+            .values(status=DocStatus.DELETED, updated_at=datetime.now(UTC))
         )
 
 
@@ -125,8 +129,12 @@ class ChunkRepository:
                 chunk_index=i,
                 content=content,
                 token_count=token_counts[i] if i < len(token_counts) else None,
-                section_title=metadata_list[i].get("section_title") if metadata_list and i < len(metadata_list) else None,
-                page_number=metadata_list[i].get("page_number") if metadata_list and i < len(metadata_list) else None,
+                section_title=metadata_list[i].get("section_title")
+                if metadata_list and i < len(metadata_list)
+                else None,
+                page_number=metadata_list[i].get("page_number")
+                if metadata_list and i < len(metadata_list)
+                else None,
             )
             records.append(chunk)
 
@@ -137,7 +145,9 @@ class ChunkRepository:
     async def get_by_document(self, doc_id: UUID) -> list[DocumentChunk]:
         """获取文档的所有分块"""
         result = await self.session.execute(
-            select(DocumentChunk).where(DocumentChunk.document_id == doc_id).order_by(DocumentChunk.chunk_index)
+            select(DocumentChunk)
+            .where(DocumentChunk.document_id == doc_id)
+            .order_by(DocumentChunk.chunk_index)
         )
         return list(result.scalars().all())
 

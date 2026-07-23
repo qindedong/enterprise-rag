@@ -4,13 +4,14 @@
 封装所有知识库相关的数据库查询，不包含任何业务逻辑.
 """
 
+from datetime import UTC
 from uuid import UUID
 
-from sqlalchemy import func, select, and_
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.database.knowledge_base import KnowledgeBase, KBMember, KBStatus, MemberRole
+from app.models.database.knowledge_base import KBMember, KBStatus, KnowledgeBase, MemberRole
 
 
 class KBRepository:
@@ -44,8 +45,9 @@ class KBRepository:
     async def find_by_id(self, kb_id: UUID) -> KnowledgeBase | None:
         """按 ID 查找知识库"""
         result = await self.session.execute(
-            select(KnowledgeBase)
-            .where(KnowledgeBase.id == kb_id, KnowledgeBase.status != KBStatus.DELETED)
+            select(KnowledgeBase).where(
+                KnowledgeBase.id == kb_id, KnowledgeBase.status != KBStatus.DELETED
+            )
         )
         return result.scalar_one_or_none()
 
@@ -99,23 +101,25 @@ class KBRepository:
 
     async def update(self, kb_id: UUID, **kwargs) -> None:
         """更新知识库字段"""
-        from sqlalchemy import update as sql_update
-        from datetime import datetime, timezone
+        from datetime import datetime
 
-        kwargs["updated_at"] = datetime.now(timezone.utc)
+        from sqlalchemy import update as sql_update
+
+        kwargs["updated_at"] = datetime.now(UTC)
         await self.session.execute(
             sql_update(KnowledgeBase).where(KnowledgeBase.id == kb_id).values(**kwargs)
         )
 
     async def soft_delete(self, kb_id: UUID) -> None:
         """软删除知识库"""
+        from datetime import datetime
+
         from sqlalchemy import update as sql_update
-        from datetime import datetime, timezone
 
         await self.session.execute(
             sql_update(KnowledgeBase)
             .where(KnowledgeBase.id == kb_id)
-            .values(status=KBStatus.DELETED, updated_at=datetime.now(timezone.utc))
+            .values(status=KBStatus.DELETED, updated_at=datetime.now(UTC))
         )
 
     async def find_by_name_and_owner(self, name: str, owner_id: UUID) -> KnowledgeBase | None:
@@ -141,7 +145,9 @@ class KBRepository:
 
     # ===== 成员管理 =====
 
-    async def add_member(self, kb_id: UUID, user_id: UUID, role: MemberRole = MemberRole.VIEWER) -> KBMember:
+    async def add_member(
+        self, kb_id: UUID, user_id: UUID, role: MemberRole = MemberRole.VIEWER
+    ) -> KBMember:
         """添加知识库成员"""
         member = KBMember(kb_id=kb_id, user_id=user_id, role=role)
         self.session.add(member)
@@ -166,9 +172,7 @@ class KBRepository:
     async def list_members(self, kb_id: UUID) -> list[KBMember]:
         """获取知识库所有成员"""
         result = await self.session.execute(
-            select(KBMember)
-            .options(selectinload(KBMember.user))
-            .where(KBMember.kb_id == kb_id)
+            select(KBMember).options(selectinload(KBMember.user)).where(KBMember.kb_id == kb_id)
         )
         return list(result.unique().scalars().all())
 
@@ -192,7 +196,8 @@ class KBRepository:
 
     async def get_document_count(self, kb_id: UUID) -> int:
         """获取知识库文档数量"""
-        from app.models.database.document import Document, DocStatus
+        from app.models.database.document import DocStatus, Document
+
         result = await self.session.execute(
             select(func.count()).where(
                 Document.kb_id == kb_id,
@@ -204,6 +209,7 @@ class KBRepository:
     async def get_chunk_count(self, kb_id: UUID) -> int:
         """获取知识库分块数量"""
         from app.models.database.document import DocumentChunk
+
         result = await self.session.execute(
             select(func.count()).where(
                 DocumentChunk.kb_id == kb_id,
@@ -213,7 +219,5 @@ class KBRepository:
 
     async def count_members(self, kb_id: UUID) -> int:
         """统计知识库成员数量"""
-        result = await self.session.execute(
-            select(func.count()).where(KBMember.kb_id == kb_id)
-        )
+        result = await self.session.execute(select(func.count()).where(KBMember.kb_id == kb_id))
         return result.scalar() or 0

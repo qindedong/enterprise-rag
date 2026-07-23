@@ -1,16 +1,19 @@
 """Service 层补充测试 — KBService 边界, ConversationService 边界, AuthService"""
 
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
-from app.services.kb_service import KBService
-from app.services.conversation_service import ConversationService
-from app.services.auth_service import AuthService
+import pytest
+
 from app.core.exceptions import (
-    NotFoundException, DuplicateException, UnauthorizedException,
-    ValidationException, ForbiddenException,
+    ForbiddenException,
+    NotFoundException,
+    UnauthorizedException,
+    ValidationException,
 )
+from app.services.auth_service import AuthService
+from app.services.conversation_service import ConversationService
+from app.services.kb_service import KBService
 
 
 @pytest.mark.unit
@@ -135,7 +138,7 @@ class TestConversationServiceExtended:
         conv_repo.list_by_user = AsyncMock(return_value=([], 0))
 
         service = ConversationService(conv_repo, AsyncMock())
-        items, total = await service.list_by_user(uuid4(), kb_id=uuid4())
+        _items, total = await service.list_by_user(uuid4(), kb_id=uuid4())
 
         assert total == 0
         conv_repo.list_by_user.assert_called_once()

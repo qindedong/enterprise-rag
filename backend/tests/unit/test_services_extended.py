@@ -1,13 +1,14 @@
 """Service 层扩展测试"""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
-from app.services.document_service import DocumentService, ALLOWED_MIME_TYPES
-from app.services.rag_service import RAGService
+import pytest
+
+from app.core.exceptions import NotFoundException, ValidationException
 from app.services.conversation_service import ConversationService
-from app.core.exceptions import NotFoundException, DuplicateException, ValidationException
+from app.services.document_service import ALLOWED_MIME_TYPES, DocumentService
+from app.services.rag_service import RAGService
 
 
 @pytest.mark.unit
@@ -20,9 +21,7 @@ class TestDocumentService:
         service = DocumentService(AsyncMock(), AsyncMock(), AsyncMock(), AsyncMock())
 
         with pytest.raises(ValidationException):
-            await service.upload_document(
-                uuid4(), "test.exe", "application/x-msdownload", b"fake"
-            )
+            await service.upload_document(uuid4(), "test.exe", "application/x-msdownload", b"fake")
 
     @pytest.mark.asyncio
     async def test_get_detail_not_found(self):
@@ -118,21 +117,25 @@ class TestRAGService:
     async def test_ask_generates_answer_with_citations(self):
         """测试：正常路径生成回答和引用"""
         mock_retrieval = AsyncMock()
-        mock_retrieval.retrieve = AsyncMock(return_value=[
-            {
-                "document_title": "手册.md",
-                "content": "公司年假是15天。",
-                "chunk_id": str(uuid4()),
-                "score": 0.95,
-                "title": "手册.md",
-            }
-        ])
+        mock_retrieval.retrieve = AsyncMock(
+            return_value=[
+                {
+                    "document_title": "手册.md",
+                    "content": "公司年假是15天。",
+                    "chunk_id": str(uuid4()),
+                    "score": 0.95,
+                    "title": "手册.md",
+                }
+            ]
+        )
 
         mock_llm = AsyncMock()
-        mock_llm.generate = AsyncMock(return_value={
-            "answer": "年假共有15天 [1]。",
-            "usage": {"total_tokens": 100},
-        })
+        mock_llm.generate = AsyncMock(
+            return_value={
+                "answer": "年假共有15天 [1]。",
+                "usage": {"total_tokens": 100},
+            }
+        )
 
         service = RAGService(mock_retrieval, mock_llm)
         result = await service.ask("年假有多少天？", uuid4())
@@ -222,7 +225,9 @@ class TestAuthService:
         user_repo.find_by_username.return_value = None
         user_repo.find_by_email.return_value = None
 
-        service = __import__("app.services.auth_service", fromlist=["AuthService"]).AuthService(user_repo)
+        service = __import__("app.services.auth_service", fromlist=["AuthService"]).AuthService(
+            user_repo
+        )
         with pytest.raises(ValidationException):
             await service.register("user", "user@test.com", "short")
 

@@ -15,20 +15,27 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
+from pydantic import BaseModel, Field
 
 from app.api.deps import get_current_user, get_kb_service
 from app.models.database.user import User
-from app.models.request_response.response import APIResponse, PageInfo, PaginatedData, PaginatedResponse
+from app.models.request_response.response import (
+    APIResponse,
+    PageInfo,
+    PaginatedData,
+    PaginatedResponse,
+)
 from app.services.kb_service import KBService
-from pydantic import BaseModel, Field
 
 router = APIRouter(prefix="/knowledge-bases", tags=["知识库"])
 
 
 # ===== 请求模型 =====
 
+
 class CreateKBRequest(BaseModel):
     """创建知识库请求"""
+
     name: str = Field(..., min_length=1, max_length=255, description="知识库名称")
     description: str = Field("", max_length=500, description="描述")
     chunk_size: int = Field(500, ge=500, le=800, description="分块大小")
@@ -38,6 +45,7 @@ class CreateKBRequest(BaseModel):
 
 class UpdateKBRequest(BaseModel):
     """更新知识库请求（所有字段可选）"""
+
     name: str | None = Field(None, min_length=1, max_length=255)
     description: str | None = Field(None, max_length=500)
     chunk_size: int | None = Field(None, ge=500, le=800)
@@ -47,11 +55,13 @@ class UpdateKBRequest(BaseModel):
 
 class AddMemberRequest(BaseModel):
     """添加成员请求"""
+
     user_id: str = Field(..., description="用户 ID")
     role: str = Field("viewer", pattern="^(admin|editor|viewer)$", description="角色")
 
 
 # ===== 接口 =====
+
 
 @router.post("", summary="创建知识库", status_code=201)
 async def create_knowledge_base(
@@ -130,6 +140,7 @@ async def delete_knowledge_base(
 
 
 # ===== 成员管理 =====
+
 
 @router.post("/{kb_id}/members", summary="添加成员")
 async def add_member(

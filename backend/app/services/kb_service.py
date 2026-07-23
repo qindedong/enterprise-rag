@@ -6,10 +6,15 @@
 
 from uuid import UUID
 
-from app.core.exceptions import ForbiddenException, NotFoundException, ValidationException, DuplicateException
+from app.core.exceptions import (
+    DuplicateException,
+    ForbiddenException,
+    NotFoundException,
+    ValidationException,
+)
 from app.core.logger import get_logger
-from app.repositories.kb_repository import KBRepository
 from app.models.database.knowledge_base import MemberRole
+from app.repositories.kb_repository import KBRepository
 
 logger = get_logger(__name__)
 
@@ -152,7 +157,11 @@ class KBService:
 
         member = await self.kb_repo.add_member(kb_id, user_id, MemberRole(role))
         logger.info(f"成员已添加: kb={kb_id}, user={user_id}, role={role}")
-        return {"kb_id": str(member.kb_id), "user_id": str(member.user_id), "role": member.role.value}
+        return {
+            "kb_id": str(member.kb_id),
+            "user_id": str(member.user_id),
+            "role": member.role.value,
+        }
 
     async def remove_member(self, kb_id: UUID, owner_id: UUID, user_id: UUID) -> None:
         """移除成员"""
@@ -200,7 +209,7 @@ class KBService:
             "description": kb.description,
             "owner_id": str(kb.owner_id),
             "status": kb.status.value if kb.status else "active",
-            "document_count": getattr(kb, 'document_count', 0) or 0,
+            "document_count": getattr(kb, "document_count", 0) or 0,
             "created_at": kb.created_at.isoformat() if kb.created_at else None,
             "updated_at": kb.updated_at.isoformat() if kb.updated_at else None,
         }
@@ -220,9 +229,9 @@ class KBService:
             "embedding_model": kb.embedding_model,
             "status": kb.status.value if kb.status else "active",
             "stats": {
-                "document_count": getattr(kb, 'document_count', 0) or 0,
-                "chunk_count": getattr(kb, 'chunk_count', 0) or 0,
-                "total_questions": getattr(kb, 'total_questions', 0) or 0,
+                "document_count": getattr(kb, "document_count", 0) or 0,
+                "chunk_count": getattr(kb, "chunk_count", 0) or 0,
+                "total_questions": getattr(kb, "total_questions", 0) or 0,
             },
             "member_count": len(kb.members) if kb.members else 0,
             "created_at": kb.created_at.isoformat() if kb.created_at else None,

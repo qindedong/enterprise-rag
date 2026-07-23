@@ -4,9 +4,10 @@
 封装所有用户相关的数据库查询，不包含任何业务逻辑.
 """
 
+from datetime import UTC
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.database.user import User
@@ -18,7 +19,9 @@ class UserRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def create(self, username: str, email: str, hashed_password: str, display_name: str | None = None) -> User:
+    async def create(
+        self, username: str, email: str, hashed_password: str, display_name: str | None = None
+    ) -> User:
         """创建用户"""
         user = User(
             username=username,
@@ -47,9 +50,10 @@ class UserRepository:
 
     async def update_last_login(self, user_id: UUID) -> None:
         """更新最后登录时间"""
+        from datetime import datetime
+
         from sqlalchemy import update
-        from datetime import datetime, timezone
 
         await self.session.execute(
-            update(User).where(User.id == user_id).values(last_login_at=datetime.now(timezone.utc))
+            update(User).where(User.id == user_id).values(last_login_at=datetime.now(UTC))
         )
