@@ -170,32 +170,32 @@ export function KBDetailPage() {
       {/* 返回按钮 */}
       <button
         onClick={() => navigate('/kbs')}
-        className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-4"
+        className="flex items-center gap-2 text-sm text-ink-muted hover:text-ink mb-4"
       >
         <LucideArrowLeft className="h-4 w-4" />
         返回知识库列表
       </button>
 
       {/* KB 头部 */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
+      <div className="card p-5 mb-6">
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-xl font-bold text-gray-800">{kb.name}</h1>
+            <h1 className="font-display text-xl font-bold text-ink">{kb.name}</h1>
             {kb.description && (
-              <p className="text-sm text-gray-500 mt-1">{kb.description}</p>
+              <p className="meta-label mt-1">{kb.description}</p>
             )}
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => navigate(`/chat?kb=${id}`)}
-              className="flex items-center gap-1.5 px-3 py-2 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600 transition-colors"
+              className="btn-primary"
             >
               <LucideMessageSquare className="h-4 w-4" />
               AI 问答
             </button>
             <button
               onClick={() => setDeleteConfirm(true)}
-              className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+              className="p-2 text-ink-muted hover:text-err hover:bg-err-soft rounded-theme transition-colors"
               title="删除知识库"
             >
               <LucideTrash2 className="h-4 w-4" />
@@ -204,17 +204,17 @@ export function KBDetailPage() {
         </div>
         {/* 统计 */}
         {stats && (
-          <div className="flex items-center gap-5 mt-4 pt-4 border-t border-gray-100">
-            <div className="flex items-center gap-1.5 text-sm text-gray-500">
-              <LucideFileText className="h-4 w-4 text-gray-400" />
+          <div className="flex items-center gap-5 mt-4 pt-4 border-t border-line-soft">
+            <div className="flex items-center gap-1.5 meta-label">
+              <LucideFileText className="h-4 w-4" />
               {stats.doc_count} 个文档
             </div>
-            <div className="flex items-center gap-1.5 text-sm text-gray-500">
-              <LucideHash className="h-4 w-4 text-gray-400" />
+            <div className="flex items-center gap-1.5 meta-label">
+              <LucideHash className="h-4 w-4" />
               {stats.chunk_count} 个分块
             </div>
-            <div className="flex items-center gap-1.5 text-sm text-gray-500">
-              <LucideMessageSquare className="h-4 w-4 text-gray-400" />
+            <div className="flex items-center gap-1.5 meta-label">
+              <LucideMessageSquare className="h-4 w-4" />
               {stats.total_questions} 次问答
             </div>
           </div>
@@ -233,8 +233,8 @@ export function KBDetailPage() {
         }}
         onClick={() => fileInputRef.current?.click()}
         className={`
-          border-2 border-dashed rounded-xl p-6 mb-6 text-center cursor-pointer transition-colors
-          ${dragOver ? 'border-blue-400 bg-blue-50' : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'}
+          border-2 border-dashed rounded-theme p-6 mb-6 text-center cursor-pointer transition-colors
+          ${dragOver ? 'border-accent bg-accent/10' : 'border-line hover:border-accent hover:bg-line-soft'}
         `}
       >
         <input
@@ -250,27 +250,27 @@ export function KBDetailPage() {
         />
         {uploading ? (
           <div className="space-y-3">
-            <LucideUpload className="h-8 w-8 mx-auto text-blue-500 animate-bounce" />
-            <p className="text-sm text-gray-600">正在上传处理中...</p>
-            <div className="w-full max-w-xs mx-auto bg-gray-200 rounded-full h-2">
+            <LucideUpload className="h-8 w-8 mx-auto text-accent animate-bounce" />
+            <p className="text-sm text-ink-muted">正在上传处理中...</p>
+            <div className="w-full max-w-xs mx-auto bg-line-soft rounded-full h-2">
               <div
-                className="h-2 bg-blue-500 rounded-full transition-all duration-300"
+                className="h-2 bg-accent rounded-full transition-all duration-300"
                 style={{ width: `${uploadProgress}%` }}
               />
             </div>
-            <p className="text-xs text-gray-400">{uploadProgress}%</p>
+            <p className="meta-label">{uploadProgress}%</p>
           </div>
         ) : (
           <div className="space-y-2">
-            <LucideUpload className="h-8 w-8 mx-auto text-gray-400" />
-            <p className="text-sm text-gray-600">
-              <span className="text-blue-500 font-medium">点击上传</span> 或拖拽文件到此处
+            <LucideUpload className="h-8 w-8 mx-auto text-ink-muted" />
+            <p className="text-sm text-ink-muted">
+              <span className="text-accent font-medium">点击上传</span> 或拖拽文件到此处
             </p>
-            <p className="text-xs text-gray-400">支持 PDF、Markdown、TXT 格式</p>
+            <p className="meta-label">支持 PDF、Markdown、TXT 格式</p>
           </div>
         )}
         {uploadError && (
-          <p className="text-sm text-red-500 mt-2">{uploadError}</p>
+          <p role="alert" className="text-sm text-err mt-2">{uploadError}</p>
         )}
       </div>
 
@@ -281,12 +281,14 @@ export function KBDetailPage() {
           value={keyword}
           onChange={(e) => { setKeyword(e.target.value); setPage(1) }}
           placeholder="搜索文档..."
-          className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          aria-label="搜索文档"
+          className="input flex-1"
         />
         <select
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}
-          className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          aria-label="按状态筛选"
+          className="px-3 py-2 bg-surface-raised border border-line rounded-theme text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent"
         >
           <option value="">全部状态</option>
           {Object.entries(DOC_STATUS_MAP).map(([k, v]) => (
@@ -305,18 +307,18 @@ export function KBDetailPage() {
           icon={<LucideFileText className="h-12 w-12" />}
         />
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="divide-y divide-gray-100">
+        <div className="card overflow-hidden">
+          <div className="divide-y divide-line-soft">
             {docs.map((doc) => (
-              <div key={doc.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50 transition-colors">
+              <div key={doc.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-line-soft transition-colors">
                 {/* 图标 */}
                 <span className="text-2xl">{FILE_TYPE_ICONS[doc.file_type] || '📄'}</span>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium text-gray-800 truncate">{doc.title}</p>
+                    <p className="text-sm font-medium text-ink truncate">{doc.title}</p>
                     <DocStatusBadge status={doc.doc_status} />
                   </div>
-                  <p className="text-xs text-gray-400 mt-0.5">
+                  <p className="meta-label mt-0.5">
                     {doc.file_type.toUpperCase()} · {(doc.file_size / 1024).toFixed(1)} KB · {doc.chunk_count} 个分块 · {new Date(doc.created_at).toLocaleDateString('zh-CN')}
                   </p>
                 </div>
@@ -324,7 +326,7 @@ export function KBDetailPage() {
                   {doc.doc_status === 'failed' && (
                     <button
                       onClick={() => handleReprocess(doc.id)}
-                      className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-md transition-colors"
+                      className="p-1.5 text-ink-muted hover:text-accent hover:bg-accent/10 rounded-theme transition-colors"
                       title="重新处理"
                     >
                       <LucideRefreshCw className="h-4 w-4" />
@@ -332,7 +334,7 @@ export function KBDetailPage() {
                   )}
                   <button
                     onClick={() => handleDeleteDoc(doc.id)}
-                    className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
+                    className="p-1.5 text-ink-muted hover:text-err hover:bg-err-soft rounded-theme transition-colors"
                     title="删除"
                   >
                     <LucideTrash2 className="h-4 w-4" />
@@ -351,22 +353,22 @@ export function KBDetailPage() {
       {deleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/30" onClick={() => setDeleteConfirm(false)} />
-          <div className="relative bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-sm p-6">
-            <h2 className="text-lg font-semibold text-gray-800 mb-2">删除知识库</h2>
-            <p className="text-sm text-gray-500 mb-4">
+          <div className="relative card w-full max-w-sm p-6">
+            <h2 className="font-display text-lg font-semibold text-ink mb-2">删除知识库</h2>
+            <p className="text-sm text-ink-muted mb-4">
               确定要删除「{kb.name}」吗？该知识库下的所有文档和问答记录将被永久删除，且不可恢复。
             </p>
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setDeleteConfirm(false)}
-                className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg"
+                className="btn-ghost"
               >
                 取消
               </button>
               <button
                 onClick={handleDeleteKB}
                 disabled={deleting}
-                className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 disabled:opacity-60"
+                className="bg-err text-accent-ink rounded-theme px-4 py-2 text-sm font-medium transition-all hover:brightness-110 disabled:opacity-60"
               >
                 {deleting ? '删除中...' : '确认删除'}
               </button>
