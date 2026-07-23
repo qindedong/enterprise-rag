@@ -1,0 +1,36 @@
+{"question": "公司上午的工作时间是几点到几点？", "relevant_docs": ["公司考勤制度"], "difficulty": "easy", "answer_hint": "9:00 - 12:00"}
+{"question": "午休时间需要打卡吗？", "relevant_docs": ["公司考勤制度"], "difficulty": "easy", "answer_hint": "午休时段无需打卡"}
+{"question": "9:40 到公司算什么情况，怎么处理？", "relevant_docs": ["公司考勤制度"], "difficulty": "medium", "answer_hint": "严重迟到，按事假 0.5 天计算"}
+{"question": "研发部门可以申请什么样的工作时间安排？", "relevant_docs": ["公司考勤制度"], "difficulty": "medium", "answer_hint": "弹性工作制，核心时段 10:00-16:00 必须到岗"}
+{"question": "入职满一年有几天年假？年假上限是多少？", "relevant_docs": ["公司考勤制度", "员工福利薪酬制度"], "difficulty": "easy", "answer_hint": "5 天，上限 15 天"}
+{"question": "男性员工陪产假有多少天？", "relevant_docs": ["公司考勤制度"], "difficulty": "easy", "answer_hint": "15 天"}
+{"question": "请 5 天以上的假需要谁审批？", "relevant_docs": ["公司考勤制度"], "difficulty": "medium", "answer_hint": "HR 总监"}
+{"question": "周末加班的补偿标准是什么？可以调休吗？", "relevant_docs": ["公司考勤制度"], "difficulty": "medium", "answer_hint": "2 倍工资或安排调休"}
+{"question": "国庆节加班工资怎么算，能不能用调休代替？", "relevant_docs": ["公司考勤制度"], "difficulty": "medium", "answer_hint": "3 倍工资，不可调休"}
+{"question": "如果我早上 11 点才到又没请假，会有什么后果？", "relevant_docs": ["公司考勤制度"], "difficulty": "hard", "answer_hint": "10:30 后到岗且未请假算旷工半天，扣发当日工资"}
+{"question": "考勤制度从什么时候开始施行？", "relevant_docs": ["公司考勤制度"], "difficulty": "easy", "answer_hint": "2025 年 1 月 1 日"}
+{"question": "请假要在哪个系统里提交申请？主管多久内要批？", "relevant_docs": ["公司考勤制度"], "difficulty": "medium", "answer_hint": "企业微信，直属主管 1 天内审批"}
+{"question": "工资每个月几号发？", "relevant_docs": ["员工福利薪酬制度"], "difficulty": "easy", "answer_hint": "每月 10 日发放上月工资"}
+{"question": "绩效拿 A 的话奖金系数是多少？大概多少人能拿到？", "relevant_docs": ["员工福利薪酬制度"], "difficulty": "medium", "answer_hint": "1.2，约占 20%"}
+{"question": "晋升之后薪资至少涨多少？", "relevant_docs": ["员工福利薪酬制度"], "difficulty": "medium", "answer_hint": "不低于 15%"}
+{"question": "公积金缴存比例是多少？", "relevant_docs": ["员工福利薪酬制度"], "difficulty": "easy", "answer_hint": "公司和个人各 12%"}
+{"question": "公司重疾险保额多少？覆盖多少种疾病？", "relevant_docs": ["员工福利薪酬制度"], "difficulty": "easy", "answer_hint": "50 万元，100 种"}
+{"question": "住院医疗费能报销多少？有上限吗？", "relevant_docs": ["员工福利薪酬制度"], "difficulty": "medium", "answer_hint": "住院 100% 报销，年度上限 20 万元"}
+{"question": "员工过生日有什么福利？", "relevant_docs": ["员工福利薪酬制度"], "difficulty": "easy", "answer_hint": "生日当天带薪休假半天"}
+{"question": "住房补贴的标准是怎样的？", "relevant_docs": ["员工福利薪酬制度"], "difficulty": "easy", "answer_hint": "1000-3000 元/月，按城市等级区分"}
+{"question": "我想在职读个硕士，公司能报销学费吗？", "relevant_docs": ["员工福利薪酬制度"], "difficulty": "medium", "answer_hint": "可以，需签订服务期协议"}
+{"question": "夏天有高温补贴吗？发几个月？", "relevant_docs": ["员工福利薪酬制度"], "difficulty": "medium", "answer_hint": "300 元/月，6-9 月发放"}
+{"question": "每个月买书能报销多少钱？", "relevant_docs": ["员工福利薪酬制度"], "difficulty": "medium", "answer_hint": "每月 100 元读书基金"}
+{"question": "分享技术文章或者做内部分享有奖励吗？", "relevant_docs": ["员工福利薪酬制度"], "difficulty": "hard", "answer_hint": "每周五技术分享会，分享者获 500 元奖励"}
+{"question": "PRD 里必须包含哪些内容？", "relevant_docs": ["产品研发流程"], "difficulty": "medium", "answer_hint": "需求背景、用户故事、功能描述、验收标准、优先级、风险评估"}
+{"question": "一个 Sprint 是多长时间？每天站会几点开始？", "relevant_docs": ["产品研发流程"], "difficulty": "easy", "answer_hint": "两周（10 个工作日），早 9:30"}
+{"question": "代码合入主分支前必须经过什么流程？", "relevant_docs": ["产品研发流程"], "difficulty": "medium", "answer_hint": "Code Review，至少一名同级或以上人员执行"}
+{"question": "单元测试覆盖率要求是多少？", "relevant_docs": ["产品研发流程"], "difficulty": "easy", "answer_hint": "不低于 80%"}
+{"question": "紧急修复 bug 应该从哪个分支拉 hotfix 分支？", "relevant_docs": ["产品研发流程"], "difficulty": "medium", "answer_hint": "从 main 拉出"}
+{"question": "系统崩溃导致数据丢失属于什么级别的 Bug？多久要修好？", "relevant_docs": ["产品研发流程"], "difficulty": "medium", "answer_hint": "P0 致命，2 小时内修复"}
+{"question": "新功能上线时灰度发布是怎么逐步放量的？", "relevant_docs": ["产品研发流程"], "difficulty": "medium", "answer_hint": "5% → 25% → 100%，每阶段观察 30 分钟"}
+{"question": "公司对线上服务可用性的承诺是多少？全年 P0 故障允许多少次？", "relevant_docs": ["产品研发流程"], "difficulty": "hard", "answer_hint": "SLA 99.9%，P0 全年不超过 2 次"}
+{"question": "技术方案文档里需要写数据库设计吗？谁来审？", "relevant_docs": ["产品研发流程"], "difficulty": "medium", "answer_hint": "需要 ER 图，架构师和高级工程师评审"}
+{"question": "从需求评审到功能上线平均要多少个工作日？", "relevant_docs": ["产品研发流程"], "difficulty": "easy", "answer_hint": "不超过 15 个工作日"}
+{"question": "设计师用什么工具做协作？设计评审要检查移动端适配吗？", "relevant_docs": ["产品研发流程"], "difficulty": "medium", "answer_hint": "Figma，需要检查响应式布局"}
+{"question": "提交代码时 commit message 的格式规范是什么？举个例子", "relevant_docs": ["产品研发流程"], "difficulty": "hard", "answer_hint": "Conventional Commits，如 feat: 新增用户登录模块"}

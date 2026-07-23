@@ -11,16 +11,20 @@ Worker — 文档异步处理服务
 """
 
 import asyncio
+import contextlib
 import json
 import os
 import signal
 import sys
-from datetime import datetime, timezone
-from uuid import UUID, uuid4
-from pathlib import Path
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from qdrant_client.models import PointStruct
+
+if TYPE_CHECKING:
+    from app.infrastructure.embedding_client import EmbeddingClient
+    from app.infrastructure.qdrant_client import QdrantStore
 
 # 确保项目根目录在 sys.path 中
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
@@ -29,18 +33,18 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 async def main():
     """Worker 主循环"""
     # 延迟导入，确保日志和配置先就绪
+    import redis.asyncio as aioredis
+    from redis.exceptions import TimeoutError as RedisTimeoutError
+
     from app.core.config import get_settings
     from app.infrastructure.embedding_client import EmbeddingClient
     from app.infrastructure.qdrant_client import QdrantStore
-    from app.parsers.registry import ParserRegistry
-    from app.utils.text_splitter import TextSplitter
-
-    import redis.asyncio as aioredis
 
     settings = get_settings()
 
     # 日志
     import logging
+
     logging.basicConfig(
         level=getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO),
         format="%(asctime)s | %(levelname)-8s | worker | %(message)s",
@@ -60,7 +64,7 @@ async def main():
     qdrant_store = QdrantStore()
 
     # 队列名称
-    QUEUE_KEY = "rag:doc_process_queue"
+    queue_key = "rag:doc_process_queue"
 
     # 优雅关闭
     shutdown_flag = asyncio.Event()
@@ -70,19 +74,17 @@ async def main():
         shutdown_flag.set()
 
     for sig in (signal.SIGINT, signal.SIGTERM):
-        try:
+        with contextlib.suppress(Exception):
             signal.signal(sig, handle_signal)
-        except Exception:
-            pass
 
-    logger.info(f"开始监听队列: {QUEUE_KEY}")
+    logger.info(f"开始监听队列: {queue_key}")
 
     processed = 0
     while not shutdown_flag.is_set():
         try:
             # BRPOP 阻塞等待任务（超时 5 秒以允许检查 shutdown_flag）
             result = await asyncio.wait_for(
-                redis.brpop(QUEUE_KEY, timeout=5),
+                redis.brpop(queue_key, timeout=5),
                 timeout=6,
             )
 
@@ -113,7 +115,9 @@ async def main():
             processed += 1
             logger.info(f"✅ 已完成 {processed} 个任务")
 
-        except asyncio.TimeoutError:
+        except (TimeoutError, RedisTimeoutError):
+            # asyncio.wait_for 超时（内置 TimeoutError）或
+            # redis.asyncio 阻塞读超时（redis.exceptions.TimeoutError，不继承内置类）
             continue
         except Exception as e:
             logger.error(f"Worker 异常: {e}", exc_info=True)
@@ -136,14 +140,15 @@ async def process_document(
     """处理文档：解析 → 分块 → 向量化 → Qdrant"""
 
     import logging
-    logger = logging.getLogger("worker")
 
-    from app.parsers.registry import ParserRegistry
-    from app.utils.text_splitter import TextSplitter
-    from app.models.database.document import DocStatus
+    logger = logging.getLogger("worker")
 
     # 获取文档标题——从文件名推导
     import os
+
+    from app.parsers.registry import ParserRegistry
+    from app.utils.text_splitter import TextSplitter
+
     doc_title = os.path.basename(file_path) if file_path else "未知文档"
 
     # 更新状态为处理中
@@ -158,6 +163,7 @@ async def process_document(
             raw_text = parser.parse(file_path)
         except Exception:
             from app.parsers.text_parser import TextParser
+
             raw_text = TextParser().parse(file_path)
 
         if not raw_text or not raw_text.strip():
@@ -177,28 +183,55 @@ async def process_document(
         # Step 3: 向量化
         embeddings = await embedding_client.embed_batch(split_result.chunks)
 
-        # Step 4: 写入 Qdrant
+        # Step 4: 落库 document_chunks（jieba 预分词，供 BM25 全文检索）
+        import jieba
+
+        from app.core.database import async_session
+        from app.models.database.document import DocumentChunk
+
+        chunk_ids: list[str] = []
+        async with async_session() as session:
+            for i, chunk_text in enumerate(split_result.chunks):
+                chunk = DocumentChunk(
+                    document_id=doc_id,
+                    kb_id=kb_id,
+                    chunk_index=i,
+                    content=chunk_text,
+                    content_segmented=" ".join(jieba.cut(chunk_text)),
+                )
+                session.add(chunk)
+                await session.flush()  # 生成 chunk.id
+                chunk_ids.append(str(chunk.id))
+            await session.commit()
+        logger.info(f"分块落库完成: {len(chunk_ids)} 条 → document_chunks")
+
+        # Step 5: 写入 Qdrant（点 ID 与 document_chunks.id 一致，便于混合检索对齐）
         points = []
-        for i, (chunk_text, embedding) in enumerate(zip(split_result.chunks, embeddings)):
+        for i, (chunk_text, embedding) in enumerate(
+            zip(split_result.chunks, embeddings, strict=False)
+        ):
             point = PointStruct(
-                id=str(uuid4()),
+                id=chunk_ids[i],
                 vector=embedding,
                 payload={
                     "kb_id": str(kb_id),
                     "document_id": str(doc_id),
                     "document_title": doc_title,
+                    "chunk_id": chunk_ids[i],
                     "chunk_index": i,
                     "content": chunk_text[:2000],
-                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "created_at": datetime.now(UTC).isoformat(),
                 },
             )
             points.append(point)
 
         qdrant_store.upsert(points)
 
-        # Step 5: 标记完成
+        # Step 6: 标记完成
         await _update_doc_status(
-            redis, doc_id, "completed",
+            redis,
+            doc_id,
+            "completed",
             chunk_count=split_result.total_chunks,
         )
         logger.info(f"✅ 文档处理完成: {doc_id}, {split_result.total_chunks} 个分块")

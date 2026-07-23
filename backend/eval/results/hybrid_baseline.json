@@ -1,0 +1,1584 @@
+{
+  "metrics": {
+    "total_queries": 36,
+    "recall@1": 0.9444444444444444,
+    "recall@3": 1.0,
+    "recall@5": 1.0,
+    "recall@10": 1.0,
+    "mrr@10": 0.9722222222222222,
+    "avg_latency_ms": 1069.8438220553928,
+    "by_difficulty": {
+      "easy": {
+        "count": 13,
+        "recall@5": 1.0,
+        "mrr@10": 0.9230769230769231
+      },
+      "hard": {
+        "count": 4,
+        "recall@5": 1.0,
+        "mrr@10": 1.0
+      },
+      "medium": {
+        "count": 19,
+        "recall@5": 1.0,
+        "mrr@10": 1.0
+      }
+    },
+    "mode": "hybrid",
+    "kb_id": "db844ebf-1745-47ff-a725-bb4d86ff4497",
+    "top_k": 10,
+    "candidate_k": 50,
+    "wall_time_s": 38.84611201286316
+  },
+  "details": [
+    {
+      "question": "公司上午的工作时间是几点到几点？",
+      "difficulty": "easy",
+      "relevant_docs": [
+        "公司考勤制度"
+      ],
+      "first_hit_rank": 1,
+      "hits_at_k": {
+        "1": true,
+        "3": true,
+        "5": true,
+        "10": true
+      },
+      "reciprocal_rank": 1.0,
+      "top_results": [
+        {
+          "rank": 1,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.03278688524590164
+        },
+        {
+          "rank": 2,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.03225806451612903
+        },
+        {
+          "rank": 3,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.031746031746031744
+        },
+        {
+          "rank": 4,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.03125
+        },
+        {
+          "rank": 5,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.030309988518943745
+        }
+      ],
+      "latency_ms": 9298.081398010254
+    },
+    {
+      "question": "午休时间需要打卡吗？",
+      "difficulty": "easy",
+      "relevant_docs": [
+        "公司考勤制度"
+      ],
+      "first_hit_rank": 1,
+      "hits_at_k": {
+        "1": true,
+        "3": true,
+        "5": true,
+        "10": true
+      },
+      "reciprocal_rank": 1.0,
+      "top_results": [
+        {
+          "rank": 1,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.03252247488101534
+        },
+        {
+          "rank": 2,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.03252247488101534
+        },
+        {
+          "rank": 3,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.030776515151515152
+        },
+        {
+          "rank": 4,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.029437229437229435
+        },
+        {
+          "rank": 5,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.029206349206349208
+        }
+      ],
+      "latency_ms": 1012.3636722564697
+    },
+    {
+      "question": "9:40 到公司算什么情况，怎么处理？",
+      "difficulty": "medium",
+      "relevant_docs": [
+        "公司考勤制度"
+      ],
+      "first_hit_rank": 1,
+      "hits_at_k": {
+        "1": true,
+        "3": true,
+        "5": true,
+        "10": true
+      },
+      "reciprocal_rank": 1.0,
+      "top_results": [
+        {
+          "rank": 1,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.03252247488101534
+        },
+        {
+          "rank": 2,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.032266458495966696
+        },
+        {
+          "rank": 3,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.031009615384615385
+        },
+        {
+          "rank": 4,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.030090497737556562
+        },
+        {
+          "rank": 5,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.03007688828584351
+        }
+      ],
+      "latency_ms": 932.8351020812988
+    },
+    {
+      "question": "研发部门可以申请什么样的工作时间安排？",
+      "difficulty": "medium",
+      "relevant_docs": [
+        "公司考勤制度"
+      ],
+      "first_hit_rank": 1,
+      "hits_at_k": {
+        "1": true,
+        "3": true,
+        "5": true,
+        "10": true
+      },
+      "reciprocal_rank": 1.0,
+      "top_results": [
+        {
+          "rank": 1,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.03252247488101534
+        },
+        {
+          "rank": 2,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.031754032258064516
+        },
+        {
+          "rank": 3,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.031544957774465976
+        },
+        {
+          "rank": 4,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.03125763125763126
+        },
+        {
+          "rank": 5,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.03057889822595705
+        }
+      ],
+      "latency_ms": 1029.4620990753174
+    },
+    {
+      "question": "入职满一年有几天年假？年假上限是多少？",
+      "difficulty": "easy",
+      "relevant_docs": [
+        "公司考勤制度",
+        "员工福利薪酬制度"
+      ],
+      "first_hit_rank": 1,
+      "hits_at_k": {
+        "1": true,
+        "3": true,
+        "5": true,
+        "10": true
+      },
+      "reciprocal_rank": 1.0,
+      "top_results": [
+        {
+          "rank": 1,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.03252247488101534
+        },
+        {
+          "rank": 2,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.03252247488101534
+        },
+        {
+          "rank": 3,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.03125763125763126
+        },
+        {
+          "rank": 4,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.031024531024531024
+        },
+        {
+          "rank": 5,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.031009615384615385
+        }
+      ],
+      "latency_ms": 1046.8106269836426
+    },
+    {
+      "question": "男性员工陪产假有多少天？",
+      "difficulty": "easy",
+      "relevant_docs": [
+        "公司考勤制度"
+      ],
+      "first_hit_rank": 1,
+      "hits_at_k": {
+        "1": true,
+        "3": true,
+        "5": true,
+        "10": true
+      },
+      "reciprocal_rank": 1.0,
+      "top_results": [
+        {
+          "rank": 1,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.03278688524590164
+        },
+        {
+          "rank": 2,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.03200204813108039
+        },
+        {
+          "rank": 3,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.03149801587301587
+        },
+        {
+          "rank": 4,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.03128054740957967
+        },
+        {
+          "rank": 5,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.031009615384615385
+        }
+      ],
+      "latency_ms": 632.7955722808838
+    },
+    {
+      "question": "请 5 天以上的假需要谁审批？",
+      "difficulty": "medium",
+      "relevant_docs": [
+        "公司考勤制度"
+      ],
+      "first_hit_rank": 1,
+      "hits_at_k": {
+        "1": true,
+        "3": true,
+        "5": true,
+        "10": true
+      },
+      "reciprocal_rank": 1.0,
+      "top_results": [
+        {
+          "rank": 1,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.03278688524590164
+        },
+        {
+          "rank": 2,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.0315136476426799
+        },
+        {
+          "rank": 3,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.03128054740957967
+        },
+        {
+          "rank": 4,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.03057889822595705
+        },
+        {
+          "rank": 5,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.03036576949620428
+        }
+      ],
+      "latency_ms": 1054.274559020996
+    },
+    {
+      "question": "周末加班的补偿标准是什么？可以调休吗？",
+      "difficulty": "medium",
+      "relevant_docs": [
+        "公司考勤制度"
+      ],
+      "first_hit_rank": 1,
+      "hits_at_k": {
+        "1": true,
+        "3": true,
+        "5": true,
+        "10": true
+      },
+      "reciprocal_rank": 1.0,
+      "top_results": [
+        {
+          "rank": 1,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.03278688524590164
+        },
+        {
+          "rank": 2,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.03200204813108039
+        },
+        {
+          "rank": 3,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.031754032258064516
+        },
+        {
+          "rank": 4,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.03149801587301587
+        },
+        {
+          "rank": 5,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.030309988518943745
+        }
+      ],
+      "latency_ms": 963.7017250061035
+    },
+    {
+      "question": "国庆节加班工资怎么算，能不能用调休代替？",
+      "difficulty": "medium",
+      "relevant_docs": [
+        "公司考勤制度"
+      ],
+      "first_hit_rank": 1,
+      "hits_at_k": {
+        "1": true,
+        "3": true,
+        "5": true,
+        "10": true
+      },
+      "reciprocal_rank": 1.0,
+      "top_results": [
+        {
+          "rank": 1,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.03278688524590164
+        },
+        {
+          "rank": 2,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.03225806451612903
+        },
+        {
+          "rank": 3,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.03125763125763126
+        },
+        {
+          "rank": 4,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.03125
+        },
+        {
+          "rank": 5,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.029877369007803793
+        }
+      ],
+      "latency_ms": 969.0535068511963
+    },
+    {
+      "question": "如果我早上 11 点才到又没请假，会有什么后果？",
+      "difficulty": "hard",
+      "relevant_docs": [
+        "公司考勤制度"
+      ],
+      "first_hit_rank": 1,
+      "hits_at_k": {
+        "1": true,
+        "3": true,
+        "5": true,
+        "10": true
+      },
+      "reciprocal_rank": 1.0,
+      "top_results": [
+        {
+          "rank": 1,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.03278688524590164
+        },
+        {
+          "rank": 2,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.03200204813108039
+        },
+        {
+          "rank": 3,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.0315136476426799
+        },
+        {
+          "rank": 4,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.03149801587301587
+        },
+        {
+          "rank": 5,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.030330882352941176
+        }
+      ],
+      "latency_ms": 894.9635028839111
+    },
+    {
+      "question": "考勤制度从什么时候开始施行？",
+      "difficulty": "easy",
+      "relevant_docs": [
+        "公司考勤制度"
+      ],
+      "first_hit_rank": 1,
+      "hits_at_k": {
+        "1": true,
+        "3": true,
+        "5": true,
+        "10": true
+      },
+      "reciprocal_rank": 1.0,
+      "top_results": [
+        {
+          "rank": 1,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.032266458495966696
+        },
+        {
+          "rank": 2,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.01639344262295082
+        },
+        {
+          "rank": 3,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.016129032258064516
+        },
+        {
+          "rank": 4,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.015625
+        },
+        {
+          "rank": 5,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.015384615384615385
+        }
+      ],
+      "latency_ms": 805.2690029144287
+    },
+    {
+      "question": "请假要在哪个系统里提交申请？主管多久内要批？",
+      "difficulty": "medium",
+      "relevant_docs": [
+        "公司考勤制度"
+      ],
+      "first_hit_rank": 1,
+      "hits_at_k": {
+        "1": true,
+        "3": true,
+        "5": true,
+        "10": true
+      },
+      "reciprocal_rank": 1.0,
+      "top_results": [
+        {
+          "rank": 1,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.03278688524590164
+        },
+        {
+          "rank": 2,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.031754032258064516
+        },
+        {
+          "rank": 3,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.031746031746031744
+        },
+        {
+          "rank": 4,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.0315136476426799
+        },
+        {
+          "rank": 5,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.03007688828584351
+        }
+      ],
+      "latency_ms": 935.3501796722412
+    },
+    {
+      "question": "工资每个月几号发？",
+      "difficulty": "easy",
+      "relevant_docs": [
+        "员工福利薪酬制度"
+      ],
+      "first_hit_rank": 2,
+      "hits_at_k": {
+        "1": false,
+        "3": true,
+        "5": true,
+        "10": true
+      },
+      "reciprocal_rank": 0.5,
+      "top_results": [
+        {
+          "rank": 1,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.03252247488101534
+        },
+        {
+          "rank": 2,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.03149801587301587
+        },
+        {
+          "rank": 3,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.03149801587301587
+        },
+        {
+          "rank": 4,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.03131881575727918
+        },
+        {
+          "rank": 5,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.016129032258064516
+        }
+      ],
+      "latency_ms": 540.6877994537354
+    },
+    {
+      "question": "绩效拿 A 的话奖金系数是多少？大概多少人能拿到？",
+      "difficulty": "medium",
+      "relevant_docs": [
+        "员工福利薪酬制度"
+      ],
+      "first_hit_rank": 1,
+      "hits_at_k": {
+        "1": true,
+        "3": true,
+        "5": true,
+        "10": true
+      },
+      "reciprocal_rank": 1.0,
+      "top_results": [
+        {
+          "rank": 1,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.03278688524590164
+        },
+        {
+          "rank": 2,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.0315136476426799
+        },
+        {
+          "rank": 3,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.03125
+        },
+        {
+          "rank": 4,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.030798389007344232
+        },
+        {
+          "rank": 5,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.030536130536130537
+        }
+      ],
+      "latency_ms": 943.0539608001709
+    },
+    {
+      "question": "晋升之后薪资至少涨多少？",
+      "difficulty": "medium",
+      "relevant_docs": [
+        "员工福利薪酬制度"
+      ],
+      "first_hit_rank": 1,
+      "hits_at_k": {
+        "1": true,
+        "3": true,
+        "5": true,
+        "10": true
+      },
+      "reciprocal_rank": 1.0,
+      "top_results": [
+        {
+          "rank": 1,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.03278688524590164
+        },
+        {
+          "rank": 2,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.03125
+        },
+        {
+          "rank": 3,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.03057889822595705
+        },
+        {
+          "rank": 4,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.030017921146953404
+        },
+        {
+          "rank": 5,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.02967032967032967
+        }
+      ],
+      "latency_ms": 596.4603424072266
+    },
+    {
+      "question": "公积金缴存比例是多少？",
+      "difficulty": "easy",
+      "relevant_docs": [
+        "员工福利薪酬制度"
+      ],
+      "first_hit_rank": 1,
+      "hits_at_k": {
+        "1": true,
+        "3": true,
+        "5": true,
+        "10": true
+      },
+      "reciprocal_rank": 1.0,
+      "top_results": [
+        {
+          "rank": 1,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.03278688524590164
+        },
+        {
+          "rank": 2,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.031746031746031744
+        },
+        {
+          "rank": 3,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.030834914611005692
+        },
+        {
+          "rank": 4,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.030621785881252923
+        },
+        {
+          "rank": 5,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.030536130536130537
+        }
+      ],
+      "latency_ms": 903.3725261688232
+    },
+    {
+      "question": "公司重疾险保额多少？覆盖多少种疾病？",
+      "difficulty": "easy",
+      "relevant_docs": [
+        "员工福利薪酬制度"
+      ],
+      "first_hit_rank": 1,
+      "hits_at_k": {
+        "1": true,
+        "3": true,
+        "5": true,
+        "10": true
+      },
+      "reciprocal_rank": 1.0,
+      "top_results": [
+        {
+          "rank": 1,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.03278688524590164
+        },
+        {
+          "rank": 2,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.0315136476426799
+        },
+        {
+          "rank": 3,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.03149801587301587
+        },
+        {
+          "rank": 4,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.03036576949620428
+        },
+        {
+          "rank": 5,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.03007688828584351
+        }
+      ],
+      "latency_ms": 924.9603748321533
+    },
+    {
+      "question": "住院医疗费能报销多少？有上限吗？",
+      "difficulty": "medium",
+      "relevant_docs": [
+        "员工福利薪酬制度"
+      ],
+      "first_hit_rank": 1,
+      "hits_at_k": {
+        "1": true,
+        "3": true,
+        "5": true,
+        "10": true
+      },
+      "reciprocal_rank": 1.0,
+      "top_results": [
+        {
+          "rank": 1,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.03278688524590164
+        },
+        {
+          "rank": 2,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.031754032258064516
+        },
+        {
+          "rank": 3,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.03128054740957967
+        },
+        {
+          "rank": 4,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.03125763125763126
+        },
+        {
+          "rank": 5,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.031024531024531024
+        }
+      ],
+      "latency_ms": 1204.3287754058838
+    },
+    {
+      "question": "员工过生日有什么福利？",
+      "difficulty": "easy",
+      "relevant_docs": [
+        "员工福利薪酬制度"
+      ],
+      "first_hit_rank": 1,
+      "hits_at_k": {
+        "1": true,
+        "3": true,
+        "5": true,
+        "10": true
+      },
+      "reciprocal_rank": 1.0,
+      "top_results": [
+        {
+          "rank": 1,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.032266458495966696
+        },
+        {
+          "rank": 2,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.03225806451612903
+        },
+        {
+          "rank": 3,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.031024531024531024
+        },
+        {
+          "rank": 4,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.031009615384615385
+        },
+        {
+          "rank": 5,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.030330882352941176
+        }
+      ],
+      "latency_ms": 794.4931983947754
+    },
+    {
+      "question": "住房补贴的标准是怎样的？",
+      "difficulty": "easy",
+      "relevant_docs": [
+        "员工福利薪酬制度"
+      ],
+      "first_hit_rank": 1,
+      "hits_at_k": {
+        "1": true,
+        "3": true,
+        "5": true,
+        "10": true
+      },
+      "reciprocal_rank": 1.0,
+      "top_results": [
+        {
+          "rank": 1,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.03278688524590164
+        },
+        {
+          "rank": 2,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.03128054740957967
+        },
+        {
+          "rank": 3,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.030798389007344232
+        },
+        {
+          "rank": 4,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.03057889822595705
+        },
+        {
+          "rank": 5,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.030536130536130537
+        }
+      ],
+      "latency_ms": 710.716962814331
+    },
+    {
+      "question": "我想在职读个硕士，公司能报销学费吗？",
+      "difficulty": "medium",
+      "relevant_docs": [
+        "员工福利薪酬制度"
+      ],
+      "first_hit_rank": 1,
+      "hits_at_k": {
+        "1": true,
+        "3": true,
+        "5": true,
+        "10": true
+      },
+      "reciprocal_rank": 1.0,
+      "top_results": [
+        {
+          "rank": 1,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.03252247488101534
+        },
+        {
+          "rank": 2,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.032018442622950824
+        },
+        {
+          "rank": 3,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.031754032258064516
+        },
+        {
+          "rank": 4,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.030798389007344232
+        },
+        {
+          "rank": 5,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.030309988518943745
+        }
+      ],
+      "latency_ms": 667.6759719848633
+    },
+    {
+      "question": "夏天有高温补贴吗？发几个月？",
+      "difficulty": "medium",
+      "relevant_docs": [
+        "员工福利薪酬制度"
+      ],
+      "first_hit_rank": 1,
+      "hits_at_k": {
+        "1": true,
+        "3": true,
+        "5": true,
+        "10": true
+      },
+      "reciprocal_rank": 1.0,
+      "top_results": [
+        {
+          "rank": 1,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.03278688524590164
+        },
+        {
+          "rank": 2,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.030621785881252923
+        },
+        {
+          "rank": 3,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.03057889822595705
+        },
+        {
+          "rank": 4,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.016129032258064516
+        },
+        {
+          "rank": 5,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.015873015873015872
+        }
+      ],
+      "latency_ms": 632.331371307373
+    },
+    {
+      "question": "每个月买书能报销多少钱？",
+      "difficulty": "medium",
+      "relevant_docs": [
+        "员工福利薪酬制度"
+      ],
+      "first_hit_rank": 1,
+      "hits_at_k": {
+        "1": true,
+        "3": true,
+        "5": true,
+        "10": true
+      },
+      "reciprocal_rank": 1.0,
+      "top_results": [
+        {
+          "rank": 1,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.03278688524590164
+        },
+        {
+          "rank": 2,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.031754032258064516
+        },
+        {
+          "rank": 3,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.031746031746031744
+        },
+        {
+          "rank": 4,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.016129032258064516
+        },
+        {
+          "rank": 5,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.015384615384615385
+        }
+      ],
+      "latency_ms": 803.8225173950195
+    },
+    {
+      "question": "分享技术文章或者做内部分享有奖励吗？",
+      "difficulty": "hard",
+      "relevant_docs": [
+        "员工福利薪酬制度"
+      ],
+      "first_hit_rank": 1,
+      "hits_at_k": {
+        "1": true,
+        "3": true,
+        "5": true,
+        "10": true
+      },
+      "reciprocal_rank": 1.0,
+      "top_results": [
+        {
+          "rank": 1,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.03278688524590164
+        },
+        {
+          "rank": 2,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.03200204813108039
+        },
+        {
+          "rank": 3,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.03128054740957967
+        },
+        {
+          "rank": 4,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.03057889822595705
+        },
+        {
+          "rank": 5,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.030536130536130537
+        }
+      ],
+      "latency_ms": 655.8413505554199
+    },
+    {
+      "question": "PRD 里必须包含哪些内容？",
+      "difficulty": "medium",
+      "relevant_docs": [
+        "产品研发流程"
+      ],
+      "first_hit_rank": 1,
+      "hits_at_k": {
+        "1": true,
+        "3": true,
+        "5": true,
+        "10": true
+      },
+      "reciprocal_rank": 1.0,
+      "top_results": [
+        {
+          "rank": 1,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.03278688524590164
+        },
+        {
+          "rank": 2,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.03200204813108039
+        },
+        {
+          "rank": 3,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.03125
+        },
+        {
+          "rank": 4,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.031054405392392875
+        },
+        {
+          "rank": 5,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.031024531024531024
+        }
+      ],
+      "latency_ms": 835.7717990875244
+    },
+    {
+      "question": "一个 Sprint 是多长时间？每天站会几点开始？",
+      "difficulty": "easy",
+      "relevant_docs": [
+        "产品研发流程"
+      ],
+      "first_hit_rank": 1,
+      "hits_at_k": {
+        "1": true,
+        "3": true,
+        "5": true,
+        "10": true
+      },
+      "reciprocal_rank": 1.0,
+      "top_results": [
+        {
+          "rank": 1,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.03225806451612903
+        },
+        {
+          "rank": 2,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.03177805800756621
+        },
+        {
+          "rank": 3,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.031544957774465976
+        },
+        {
+          "rank": 4,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.03125
+        },
+        {
+          "rank": 5,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.030798389007344232
+        }
+      ],
+      "latency_ms": 863.8930320739746
+    },
+    {
+      "question": "代码合入主分支前必须经过什么流程？",
+      "difficulty": "medium",
+      "relevant_docs": [
+        "产品研发流程"
+      ],
+      "first_hit_rank": 1,
+      "hits_at_k": {
+        "1": true,
+        "3": true,
+        "5": true,
+        "10": true
+      },
+      "reciprocal_rank": 1.0,
+      "top_results": [
+        {
+          "rank": 1,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.03278688524590164
+        },
+        {
+          "rank": 2,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.03200204813108039
+        },
+        {
+          "rank": 3,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.03200204813108039
+        },
+        {
+          "rank": 4,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.03055037313432836
+        },
+        {
+          "rank": 5,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.03055037313432836
+        }
+      ],
+      "latency_ms": 989.9005889892578
+    },
+    {
+      "question": "单元测试覆盖率要求是多少？",
+      "difficulty": "easy",
+      "relevant_docs": [
+        "产品研发流程"
+      ],
+      "first_hit_rank": 2,
+      "hits_at_k": {
+        "1": false,
+        "3": true,
+        "5": true,
+        "10": true
+      },
+      "reciprocal_rank": 0.5,
+      "top_results": [
+        {
+          "rank": 1,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.031544957774465976
+        },
+        {
+          "rank": 2,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.031099324975891997
+        },
+        {
+          "rank": 3,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.03076923076923077
+        },
+        {
+          "rank": 4,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.030621785881252923
+        },
+        {
+          "rank": 5,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.03055037313432836
+        }
+      ],
+      "latency_ms": 780.3010940551758
+    },
+    {
+      "question": "紧急修复 bug 应该从哪个分支拉 hotfix 分支？",
+      "difficulty": "medium",
+      "relevant_docs": [
+        "产品研发流程"
+      ],
+      "first_hit_rank": 1,
+      "hits_at_k": {
+        "1": true,
+        "3": true,
+        "5": true,
+        "10": true
+      },
+      "reciprocal_rank": 1.0,
+      "top_results": [
+        {
+          "rank": 1,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.03252247488101534
+        },
+        {
+          "rank": 2,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.03252247488101534
+        },
+        {
+          "rank": 3,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.03149801587301587
+        },
+        {
+          "rank": 4,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.03125763125763126
+        },
+        {
+          "rank": 5,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.029857397504456328
+        }
+      ],
+      "latency_ms": 680.980920791626
+    },
+    {
+      "question": "系统崩溃导致数据丢失属于什么级别的 Bug？多久要修好？",
+      "difficulty": "medium",
+      "relevant_docs": [
+        "产品研发流程"
+      ],
+      "first_hit_rank": 1,
+      "hits_at_k": {
+        "1": true,
+        "3": true,
+        "5": true,
+        "10": true
+      },
+      "reciprocal_rank": 1.0,
+      "top_results": [
+        {
+          "rank": 1,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.03278688524590164
+        },
+        {
+          "rank": 2,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.03200204813108039
+        },
+        {
+          "rank": 3,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.03149801587301587
+        },
+        {
+          "rank": 4,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.031054405392392875
+        },
+        {
+          "rank": 5,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.03076923076923077
+        }
+      ],
+      "latency_ms": 742.9275512695312
+    },
+    {
+      "question": "新功能上线时灰度发布是怎么逐步放量的？",
+      "difficulty": "medium",
+      "relevant_docs": [
+        "产品研发流程"
+      ],
+      "first_hit_rank": 1,
+      "hits_at_k": {
+        "1": true,
+        "3": true,
+        "5": true,
+        "10": true
+      },
+      "reciprocal_rank": 1.0,
+      "top_results": [
+        {
+          "rank": 1,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.03252247488101534
+        },
+        {
+          "rank": 2,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.032266458495966696
+        },
+        {
+          "rank": 3,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.031754032258064516
+        },
+        {
+          "rank": 4,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.03149801587301587
+        },
+        {
+          "rank": 5,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.02964426877470356
+        }
+      ],
+      "latency_ms": 941.3187503814697
+    },
+    {
+      "question": "公司对线上服务可用性的承诺是多少？全年 P0 故障允许多少次？",
+      "difficulty": "hard",
+      "relevant_docs": [
+        "产品研发流程"
+      ],
+      "first_hit_rank": 1,
+      "hits_at_k": {
+        "1": true,
+        "3": true,
+        "5": true,
+        "10": true
+      },
+      "reciprocal_rank": 1.0,
+      "top_results": [
+        {
+          "rank": 1,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.032266458495966696
+        },
+        {
+          "rank": 2,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.0315136476426799
+        },
+        {
+          "rank": 3,
+          "document_title": "20260723205152_员工福利薪酬制度.md",
+          "score": 0.030886196246139225
+        },
+        {
+          "rank": 4,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.03055037313432836
+        },
+        {
+          "rank": 5,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.03036576949620428
+        }
+      ],
+      "latency_ms": 637.1479034423828
+    },
+    {
+      "question": "技术方案文档里需要写数据库设计吗？谁来审？",
+      "difficulty": "medium",
+      "relevant_docs": [
+        "产品研发流程"
+      ],
+      "first_hit_rank": 1,
+      "hits_at_k": {
+        "1": true,
+        "3": true,
+        "5": true,
+        "10": true
+      },
+      "reciprocal_rank": 1.0,
+      "top_results": [
+        {
+          "rank": 1,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.03252247488101534
+        },
+        {
+          "rank": 2,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.03252247488101534
+        },
+        {
+          "rank": 3,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.03149801587301587
+        },
+        {
+          "rank": 4,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.031009615384615385
+        },
+        {
+          "rank": 5,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.030158730158730156
+        }
+      ],
+      "latency_ms": 666.4202213287354
+    },
+    {
+      "question": "从需求评审到功能上线平均要多少个工作日？",
+      "difficulty": "easy",
+      "relevant_docs": [
+        "产品研发流程"
+      ],
+      "first_hit_rank": 1,
+      "hits_at_k": {
+        "1": true,
+        "3": true,
+        "5": true,
+        "10": true
+      },
+      "reciprocal_rank": 1.0,
+      "top_results": [
+        {
+          "rank": 1,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.03278688524590164
+        },
+        {
+          "rank": 2,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.03200204813108039
+        },
+        {
+          "rank": 3,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.03200204813108039
+        },
+        {
+          "rank": 4,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.031009615384615385
+        },
+        {
+          "rank": 5,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.030090497737556562
+        }
+      ],
+      "latency_ms": 834.81764793396
+    },
+    {
+      "question": "设计师用什么工具做协作？设计评审要检查移动端适配吗？",
+      "difficulty": "medium",
+      "relevant_docs": [
+        "产品研发流程"
+      ],
+      "first_hit_rank": 1,
+      "hits_at_k": {
+        "1": true,
+        "3": true,
+        "5": true,
+        "10": true
+      },
+      "reciprocal_rank": 1.0,
+      "top_results": [
+        {
+          "rank": 1,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.03278688524590164
+        },
+        {
+          "rank": 2,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.03200204813108039
+        },
+        {
+          "rank": 3,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.031754032258064516
+        },
+        {
+          "rank": 4,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.03149801587301587
+        },
+        {
+          "rank": 5,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.030309988518943745
+        }
+      ],
+      "latency_ms": 976.1991500854492
+    },
+    {
+      "question": "提交代码时 commit message 的格式规范是什么？举个例子",
+      "difficulty": "hard",
+      "relevant_docs": [
+        "产品研发流程"
+      ],
+      "first_hit_rank": 1,
+      "hits_at_k": {
+        "1": true,
+        "3": true,
+        "5": true,
+        "10": true
+      },
+      "reciprocal_rank": 1.0,
+      "top_results": [
+        {
+          "rank": 1,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.03278688524590164
+        },
+        {
+          "rank": 2,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.03200204813108039
+        },
+        {
+          "rank": 3,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.03200204813108039
+        },
+        {
+          "rank": 4,
+          "document_title": "20260723205152_产品研发流程.txt",
+          "score": 0.031009615384615385
+        },
+        {
+          "rank": 5,
+          "document_title": "20260723205152_公司考勤制度.md",
+          "score": 0.030117753623188408
+        }
+      ],
+      "latency_ms": 611.9928359985352
+    }
+  ]
+}

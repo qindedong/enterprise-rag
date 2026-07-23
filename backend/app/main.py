@@ -12,7 +12,7 @@ FastAPI 应用入口
 """
 
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import uvicorn
 from fastapi import FastAPI
@@ -30,10 +30,23 @@ settings = get_settings()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """应用生命周期管理"""
+    import asyncio
+
+    from app.services.doc_status_subscriber import doc_status_subscriber
+
     logger.info(f"🚀 {settings.APP_NAME} v{settings.APP_VERSION} 启动中...")
     logger.info(f"   调试模式: {settings.DEBUG}")
     logger.info(f"   日志级别: {settings.LOG_LEVEL}")
+
+    # 后台任务：订阅 Worker 的文档状态变更并落库
+    stop_event = asyncio.Event()
+    subscriber_task = asyncio.create_task(doc_status_subscriber(stop_event))
+
     yield
+
+    stop_event.set()
+    subscriber_task.cancel()
+    await asyncio.gather(subscriber_task, return_exceptions=True)
     logger.info("应用已关闭")
 
 
@@ -70,7 +83,9 @@ app = FastAPI(
 # CORS（开发环境宽松，生产环境收紧）
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"] if not settings.DEBUG else ["*"],
+    allow_origins=["http://localhost:3000", "http://localhost:5173"]
+    if not settings.DEBUG
+    else ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -85,11 +100,13 @@ register_exception_handlers(app)
 
 # ===== 路由注册 =====
 
+
 @app.get("/health", tags=["系统"])
 async def health_check():
     """健康检查接口"""
-    from app.core.database import async_engine
     from sqlalchemy import text
+
+    from app.core.database import async_engine
 
     checks = {
         "database": False,
@@ -108,6 +125,7 @@ async def health_check():
     # 检查 Redis（v1.0 不会阻塞启动）
     try:
         import redis.asyncio as aioredis
+
         r = aioredis.from_url(settings.REDIS_URL)
         await r.ping()
         await r.close()
@@ -118,6 +136,7 @@ async def health_check():
     # 检查 Qdrant（v1.0 不会阻塞启动）
     try:
         from qdrant_client import QdrantClient
+
         client = QdrantClient(url=settings.QDRANT_URL)
         client.get_collections()
         client.close()
@@ -126,18 +145,18 @@ async def health_check():
         logger.warning("Qdrant 健康检查失败（非阻塞）")
 
     all_healthy = checks["database"]  # MVP：数据库是唯一硬性依赖
-    status_code = 200 if all_healthy else 503
 
     return {
         "status": "healthy" if all_healthy else "unhealthy",
         "version": settings.APP_VERSION,
         "checks": checks,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
     }
 
 
-# 注册 v1 API 路由
-from app.api.v1.router import api_router
+# 注册 v1 API 路由（延迟导入：router 依赖 app 实例已创建，避免循环导入）
+from app.api.v1.router import api_router  # noqa: E402
+
 app.include_router(api_router)
 
 

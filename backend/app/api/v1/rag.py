@@ -12,6 +12,7 @@ RAG 问答 API + 对话管理
 """
 
 import json
+import time
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
@@ -25,7 +26,12 @@ from app.infrastructure.embedding_client import EmbeddingClient
 from app.infrastructure.llm_client import LLMClient
 from app.infrastructure.qdrant_client import QdrantStore
 from app.models.database.user import User
-from app.models.request_response.response import APIResponse, PageInfo, PaginatedData, PaginatedResponse
+from app.models.request_response.response import (
+    APIResponse,
+    PageInfo,
+    PaginatedData,
+    PaginatedResponse,
+)
 from app.rag.pipeline import RetrievalPipeline
 from app.rag.query_rewriter import QueryRewriter
 from app.rag.reranker import Reranker
@@ -50,13 +56,19 @@ def _get_rag_service():
     global _embedding_client, _llm_client, _qdrant_store, _rag_service
 
     if _rag_service is None:
+        from app.core.database import async_session
+        from app.rag.bm25_retriever import BM25Retriever
+
         _embedding_client = EmbeddingClient()
         _llm_client = LLMClient()
         _qdrant_store = QdrantStore()
 
         query_rewriter = QueryRewriter(_llm_client)
         reranker = Reranker()
-        retrieval_pipeline = RetrievalPipeline(_embedding_client, _qdrant_store, query_rewriter, reranker)
+        bm25_retriever = BM25Retriever(async_session)
+        retrieval_pipeline = RetrievalPipeline(
+            _embedding_client, _qdrant_store, query_rewriter, reranker, bm25_retriever
+        )
         _rag_service = RAGService(retrieval_pipeline, _llm_client)
 
     return _rag_service
@@ -69,19 +81,54 @@ def _get_conv_service(db=Depends(get_db)):
 
 class ChatRequest(BaseModel):
     """RAG 问答请求"""
+
     question: str = Field(..., min_length=1, max_length=2000, description="用户问题")
     conversation_id: str | None = Field(None, description="对话 ID（多轮对话）")
     top_k: int = Field(50, ge=1, le=100, description="检索候选数")
     temperature: float = Field(0.3, ge=0, le=1, description="LLM 温度")
 
 
+class SearchRequest(BaseModel):
+    """独立检索请求（只检索不生成）"""
+
+    question: str = Field(..., min_length=1, max_length=2000, description="检索问题")
+    top_k: int = Field(10, ge=1, le=50, description="重排后返回数量")
+    candidate_k: int = Field(50, ge=1, le=100, description="向量检索候选数")
+    mode: str = Field("vector", pattern="^(vector|bm25|hybrid)$", description="检索模式")
+
+
 class FeedbackRequest(BaseModel):
     """消息反馈请求"""
+
     feedback: str | None = Field(None, pattern="^(positive|negative|null)?$")
     comment: str | None = Field(None)
 
 
 # ===== RAG 问答 =====
+
+
+async def _load_history(db, conv_id: UUID | None) -> list[dict] | None:
+    """加载对话历史（多轮对话上下文）"""
+    if conv_id is None:
+        return None
+    msg_repo = MessageRepository(db)
+    messages = await msg_repo.get_by_conversation(conv_id)
+    if not messages:
+        return None
+    return [{"role": m.role.value if m.role else "user", "content": m.content} for m in messages]
+
+
+async def _save_turn(db, conv_id: UUID | None, question: str, answer: str, citations: list) -> None:
+    """保存一轮问答到对话历史（best-effort，失败不影响回答）"""
+    if conv_id is None or not answer:
+        return
+    try:
+        conv_service = ConversationService(ConversationRepository(db), MessageRepository(db))
+        await conv_service.add_message(conv_id, "user", question)
+        await conv_service.add_message(conv_id, "assistant", answer, citations=citations)
+    except Exception as e:
+        logger.warning(f"对话消息保存失败（不影响回答）: {e}")
+
 
 @router.post("/knowledge-bases/{kb_id}/chat", summary="RAG 问答（流式）")
 async def rag_chat_stream(
@@ -107,14 +154,33 @@ async def rag_chat_stream(
 
     conv_id = UUID(req.conversation_id) if req.conversation_id else None
     service = _get_rag_service()
+    history = await _load_history(db, conv_id)
 
     async def event_stream():
         # 发送对话 ID（供前端后续多轮会话使用）
         if conv_id:
             yield f"event: metadata\ndata: {json.dumps({'conversation_id': str(conv_id)})}\n\n"
 
-        async for event in service.ask_stream(req.question, UUID(kb_id), conv_id):
+        # 累积答案与引用，流结束后落库
+        full_answer = ""
+        citations: list = []
+        async for event in service.ask_stream(req.question, UUID(kb_id), conv_id, history):
+            if event.startswith("event: token"):
+                try:
+                    data = json.loads(event.split("data: ", 1)[1])
+                    full_answer += data.get("content", "")
+                except (IndexError, json.JSONDecodeError):
+                    pass
+            elif event.startswith("event: citation"):
+                try:
+                    data = json.loads(event.split("data: ", 1)[1])
+                    citations = data.get("citations", [])
+                except (IndexError, json.JSONDecodeError):
+                    pass
             yield event
+
+        # 多轮对话：保存本轮问答
+        await _save_turn(db, conv_id, req.question, full_answer, citations)
 
     return StreamingResponse(
         event_stream(),
@@ -141,15 +207,80 @@ async def rag_chat_sync(
 
     conv_id = UUID(req.conversation_id) if req.conversation_id else None
     service = _get_rag_service()
-    result = await service.ask(req.question, UUID(kb_id), conv_id)
+    history = await _load_history(db, conv_id)
+    result = await service.ask(req.question, UUID(kb_id), conv_id, history)
 
     if conv_id:
         result["conversation_id"] = str(conv_id)
+        await _save_turn(db, conv_id, req.question, result["answer"], result["citations"])
 
     return APIResponse(data=result)
 
 
+# ===== 独立检索（只检索不生成，供评估/调试使用） =====
+
+
+@router.post("/knowledge-bases/{kb_id}/search", summary="独立检索（不生成答案）")
+async def rag_search(
+    kb_id: str,
+    req: SearchRequest,
+    db=Depends(get_db),
+) -> APIResponse[dict]:
+    """
+    独立检索 API — 只执行检索管线，不调用 LLM 生成
+
+    用于检索效果评估（Recall@K / MRR）与检索结果调试。
+
+    mode 说明：
+        vector — 纯向量检索（Qdrant）
+        bm25   — 纯全文检索（PostgreSQL tsvector + jieba）
+        hybrid — 向量 + BM25，RRF 融合
+    """
+    kb_repo = KBRepository(db)
+    kb = await kb_repo.find_by_id(UUID(kb_id))
+    if not kb:
+        raise NotFoundException("知识库", kb_id)
+
+    start = time.time()
+    service = _get_rag_service()
+    try:
+        docs = await service.retrieval.retrieve(
+            req.question,
+            UUID(kb_id),
+            retrieval_top_k=req.candidate_k,
+            rerank_top_k=req.top_k,
+            mode=req.mode,
+        )
+    except ValueError as e:
+        raise ValidationException(str(e)) from e
+    elapsed = (time.time() - start) * 1000
+
+    results = [
+        {
+            "rank": i + 1,
+            "chunk_id": doc.get("chunk_id", ""),
+            "document_title": doc.get("document_title", doc.get("title", "未知文档")),
+            "content": doc.get("content", ""),
+            "page_number": doc.get("page_number"),
+            "score": doc.get("score", 0),
+        }
+        for i, doc in enumerate(docs)
+    ]
+
+    return APIResponse(
+        data={
+            "question": req.question,
+            "mode": req.mode,
+            "kb_id": kb_id,
+            "results": results,
+            "total": len(results),
+            "processing_time_ms": elapsed,
+        }
+    )
+
+
 # ===== 对话管理（内联到 rag 路由，简化依赖注入） =====
+
 
 @router.post("/knowledge-bases/{kb_id}/conversations", summary="创建对话")
 async def create_conversation(
@@ -179,7 +310,9 @@ async def list_conversations(
         page_size=page_size,
     )
     return PaginatedResponse(
-        data=PaginatedData(items=items, page_info=PageInfo(total=total, page=page, page_size=page_size))
+        data=PaginatedData(
+            items=items, page_info=PageInfo(total=total, page=page, page_size=page_size)
+        )
     )
 
 
