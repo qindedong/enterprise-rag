@@ -30,7 +30,16 @@ import { FILE_TYPE_ICONS, DOC_STATUS_MAP } from '../utils/constants'
 import type { KnowledgeBase, KBStats, Document, PageInfo } from '../types'
 
 /** 允许的文件扩展名 */
-const ALLOWED_EXTENSIONS = ['pdf', 'md', 'txt']
+const ALLOWED_EXTENSIONS = ['pdf', 'docx', 'md', 'txt']
+
+/** 上传队列项 */
+interface UploadItem {
+  key: string
+  name: string
+  progress: number
+  status: 'uploading' | 'done' | 'error'
+  error?: string
+}
 
 export function KBDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -51,11 +60,9 @@ export function KBDetailPage() {
   const [statusFilter, setStatusFilter] = useState('')
   const [docsLoading, setDocsLoading] = useState(false)
 
-  // 上传
-  const [uploading, setUploading] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState(0)
+  // 上传（多文件队列）
+  const [uploadQueue, setUploadQueue] = useState<UploadItem[]>([])
   const [dragOver, setDragOver] = useState(false)
-  const [uploadError, setUploadError] = useState('')
 
   // 删除 KB
   const [deleteConfirm, setDeleteConfirm] = useState(false)
@@ -105,30 +112,46 @@ export function KBDetailPage() {
   useEffect(() => { loadKB() }, [loadKB])
   useEffect(() => { loadDocs() }, [loadDocs])
 
-  /** 处理文件上传 */
-  const handleUpload = async (file: File) => {
-    if (!id) return
-    // 格式校验
-    const ext = file.name.split('.').pop()?.toLowerCase()
-    if (!ext || !ALLOWED_EXTENSIONS.includes(ext)) {
-      setUploadError('仅支持 PDF、Markdown、TXT 格式')
-      return
+  /** 处理多文件上传（顺序上传，逐个更新队列状态） */
+  const handleUploadFiles = async (files: File[]) => {
+    if (!id || files.length === 0) return
+
+    const items: UploadItem[] = files.map((file, i) => {
+      const ext = file.name.split('.').pop()?.toLowerCase()
+      const valid = !!ext && ALLOWED_EXTENSIONS.includes(ext)
+      return {
+        key: `${Date.now()}-${i}-${file.name}`,
+        name: file.name,
+        progress: 0,
+        status: valid ? 'uploading' : 'error',
+        error: valid ? undefined : '仅支持 PDF、Word、Markdown、TXT 格式',
+      }
+    })
+    setUploadQueue((prev) => [...prev, ...items])
+
+    let succeeded = 0
+    for (let i = 0; i < files.length; i++) {
+      const item = items[i]
+      if (item.status === 'error') continue
+      const patch = (p: Partial<UploadItem>) =>
+        setUploadQueue((prev) => prev.map((it) => (it.key === item.key ? { ...it, ...p } : it)))
+      try {
+        await uploadDocument(id, files[i], (pct) => patch({ progress: pct }))
+        patch({ progress: 100, status: 'done' })
+        succeeded++
+      } catch {
+        patch({ status: 'error', error: '上传失败，请重试' })
+      }
     }
 
-    setUploadError('')
-    setUploading(true)
-    setUploadProgress(0)
-    try {
-      await uploadDocument(id, file, setUploadProgress)
-      setUploadProgress(100)
+    if (succeeded > 0) {
       loadDocs()
       loadKB()
-    } catch {
-      setUploadError('上传失败，请重试')
-    } finally {
-      setUploading(false)
-      setTimeout(() => setUploadProgress(0), 2000)
     }
+    // 3 秒后清除已完成/失败项，保留正在上传的
+    setTimeout(() => {
+      setUploadQueue((prev) => prev.filter((it) => it.status === 'uploading'))
+    }, 3000)
   }
 
   /** 删除文档 */
@@ -228,8 +251,8 @@ export function KBDetailPage() {
         onDrop={(e) => {
           e.preventDefault()
           setDragOver(false)
-          const file = e.dataTransfer.files[0]
-          if (file) handleUpload(file)
+          const files = Array.from(e.dataTransfer.files)
+          if (files.length > 0) handleUploadFiles(files)
         }}
         onClick={() => fileInputRef.current?.click()}
         className={`
@@ -240,37 +263,49 @@ export function KBDetailPage() {
         <input
           ref={fileInputRef}
           type="file"
-          accept=".pdf,.md,.txt"
+          multiple
+          accept=".pdf,.docx,.md,.txt"
           className="hidden"
           onChange={(e) => {
-            const file = e.target.files?.[0]
-            if (file) handleUpload(file)
+            const files = Array.from(e.target.files ?? [])
+            if (files.length > 0) handleUploadFiles(files)
             e.target.value = ''
           }}
         />
-        {uploading ? (
-          <div className="space-y-3">
-            <LucideUpload className="h-8 w-8 mx-auto text-accent animate-bounce" />
-            <p className="text-sm text-ink-muted">正在上传处理中...</p>
-            <div className="w-full max-w-xs mx-auto bg-line-soft rounded-full h-2">
-              <div
-                className="h-2 bg-accent rounded-full transition-all duration-300"
-                style={{ width: `${uploadProgress}%` }}
-              />
-            </div>
-            <p className="meta-label">{uploadProgress}%</p>
+        {uploadQueue.length > 0 ? (
+          <div className="space-y-3 max-w-md mx-auto text-left">
+            {uploadQueue.map((it) => (
+              <div key={it.key} className="space-y-1">
+                <div className="flex items-center justify-between gap-3 text-sm">
+                  <span className="truncate text-ink">{it.name}</span>
+                  <span
+                    className={`shrink-0 meta-label ${
+                      it.status === 'error' ? 'text-err' : it.status === 'done' ? 'text-ok' : 'text-ink-muted'
+                    }`}
+                  >
+                    {it.status === 'error' ? (it.error ?? '失败') : it.status === 'done' ? '已提交' : `${it.progress}%`}
+                  </span>
+                </div>
+                <div className="w-full bg-line-soft rounded-full h-1.5">
+                  <div
+                    className={`h-1.5 rounded-full transition-all duration-300 ${
+                      it.status === 'error' ? 'bg-err' : it.status === 'done' ? 'bg-ok' : 'bg-accent'
+                    }`}
+                    style={{ width: `${it.status === 'error' ? 100 : it.progress}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+            <p className="meta-label text-center pt-1">上传完成后的文档会自动进入解析队列</p>
           </div>
         ) : (
           <div className="space-y-2">
             <LucideUpload className="h-8 w-8 mx-auto text-ink-muted" />
             <p className="text-sm text-ink-muted">
-              <span className="text-accent font-medium">点击上传</span> 或拖拽文件到此处
+              <span className="text-accent font-medium">点击上传</span> 或拖拽文件到此处（支持多选）
             </p>
-            <p className="meta-label">支持 PDF、Markdown、TXT 格式</p>
+            <p className="meta-label">支持 PDF、Word、Markdown、TXT 格式</p>
           </div>
-        )}
-        {uploadError && (
-          <p role="alert" className="text-sm text-err mt-2">{uploadError}</p>
         )}
       </div>
 
