@@ -5,7 +5,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { LucideBookOpen, LucideEye, LucideEyeOff } from 'lucide-react'
-import { login } from '../api/auth'
+import { login, getSSOLoginUrl } from '../api/auth'
 import { useAuth } from '../contexts/AuthContext'
 
 export function LoginPage() {
@@ -17,6 +17,7 @@ export function LoginPage() {
   const [showPwd, setShowPwd] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [ssoLoading, setSsoLoading] = useState(false)
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -102,6 +103,32 @@ export function LoginPage() {
             className="btn-primary w-full"
           >
             {loading ? '登录中...' : '登 录'}
+          </button>
+
+          <div className="flex items-center gap-3 text-ink-muted">
+            <div className="flex-1 h-px bg-line-soft" />
+            <span className="meta-label">或</span>
+            <div className="flex-1 h-px bg-line-soft" />
+          </div>
+
+          <button
+            type="button"
+            disabled={ssoLoading}
+            onClick={async () => {
+              setError('')
+              setSsoLoading(true)
+              try {
+                const res = await getSSOLoginUrl()
+                window.location.href = res.data.authorization_url
+              } catch (err: unknown) {
+                const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+                setError(msg || 'SSO 未启用或配置不完整')
+                setSsoLoading(false)
+              }
+            }}
+            className="w-full border border-line rounded-theme px-4 py-2 text-sm font-medium text-ink hover:bg-line-soft transition-colors disabled:opacity-60"
+          >
+            {ssoLoading ? '跳转中...' : '🔐 使用 SSO 单点登录'}
           </button>
         </form>
 

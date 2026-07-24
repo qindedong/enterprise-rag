@@ -37,3 +37,9 @@ export async function getMe(): Promise<APIResponse<User>> {
   const res = await apiClient.get('/auth/me')
   return res.data
 }
+
+/** 获取 SSO 登录跳转 URL */
+export async function getSSOLoginUrl(): Promise<APIResponse<{ authorization_url: string }>> {
+  const res = await apiClient.get('/auth/sso/login')
+  return res.data
+}

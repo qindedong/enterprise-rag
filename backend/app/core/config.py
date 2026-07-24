@@ -71,6 +71,23 @@ class Settings(BaseSettings):
     RETRIEVAL_TOP_K: int = 50
     RERANK_TOP_K: int = 10
 
+    # ===== SSO / OIDC 配置 =====
+    # 支持任意 OIDC Provider（Keycloak / Authentik / Auth0 / Entra ID 等）
+    OIDC_ENABLED: bool = False
+    OIDC_CLIENT_ID: str = ""
+    OIDC_CLIENT_SECRET: str = ""
+    OIDC_AUTHORIZE_URL: str = (
+        ""  # 例：https://sso.example.com/realms/x/protocol/openid-connect/auth
+    )
+    OIDC_TOKEN_URL: str = ""  # 例：https://sso.example.com/realms/x/protocol/openid-connect/token
+    OIDC_USERINFO_URL: str = (
+        ""  # 例：https://sso.example.com/realms/x/protocol/openid-connect/userinfo
+    )
+    OIDC_REDIRECT_URI: str = "http://localhost:8000/api/v1/auth/sso/callback"
+    OIDC_SCOPE: str = "openid email profile"
+    # SSO 登录成功后携带 token 重定向回前端该地址
+    FRONTEND_URL: str = "http://localhost:5173"
+
     model_config = {
         "env_file": ".env",
         "env_file_encoding": "utf-8",

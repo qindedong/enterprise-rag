@@ -15,7 +15,7 @@ import { useState, useEffect } from 'react'
 import { AuthProvider } from './contexts/AuthContext'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { MainLayout, ProtectedRoute } from './components/layout'
-import { LoginPage, RegisterPage, KBListPage, KBDetailPage, ChatPage, AnalyticsPage } from './pages'
+import { LoginPage, RegisterPage, KBListPage, KBDetailPage, ChatPage, AnalyticsPage, SSOCallbackPage } from './pages'
 
 export default function App() {
   const [ready, setReady] = useState(false)
@@ -32,6 +32,7 @@ export default function App() {
             {/* 公开路由 */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/sso/callback" element={<SSOCallbackPage />} />
 
             {/* 受保护路由（需登录） */}
             <Route
