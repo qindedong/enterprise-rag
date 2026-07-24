@@ -1,0 +1,44 @@
+# 前端（Nginx 托管静态构建产物 + /api 反向代理）
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: enterprise-rag
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: nginx
+          # 替换为你的镜像仓库地址（frontend 构建产物 + nginx 配置）
+          image: registry.example.com/enterprise-rag-frontend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits: { cpu: 250m, memory: 256Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: enterprise-rag
+spec:
+  selector:
+    app: frontend
+  ports:
+    - port: 80
+      targetPort: 80

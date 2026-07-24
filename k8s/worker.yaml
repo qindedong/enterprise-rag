@@ -1,0 +1,37 @@
+# Worker（文档异步处理，可多副本并发消费队列）
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  namespace: enterprise-rag
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: worker
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      containers:
+        - name: worker
+          # 替换为你的镜像仓库地址（Dockerfile.worker 构建）
+          image: registry.example.com/enterprise-rag-worker:latest
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef: { name: rag-config }
+            - secretRef: { name: rag-secret }
+          env:
+            - name: DATABASE_URL
+              value: "postgresql+asyncpg://raguser:$(POSTGRES_PASSWORD)@postgres:5432/ragdb"
+          volumeMounts:
+            - name: uploads
+              mountPath: /app/uploads
+          resources:
+            requests: { cpu: 250m, memory: 512Mi }
+            limits: { cpu: "2", memory: 2Gi }
+      volumes:
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: rag-uploads

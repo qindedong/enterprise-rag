@@ -1,0 +1,33 @@
+# Ingress（nginx ingress controller；TLS 证书用 cert-manager 管理）
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rag
+  namespace: enterprise-rag
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"  # 与 MAX_FILE_SIZE_MB 对齐
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"  # SSE 流式问答长连接
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: rag.example.com
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 8000
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80
+  # tls:
+  #   - hosts: [rag.example.com]
+  #     secretName: rag-tls

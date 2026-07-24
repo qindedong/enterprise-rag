@@ -1,0 +1,97 @@
+# FastAPI 后端（无状态，可水平扩展）
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: enterprise-rag
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+        - name: api
+          # 替换为你的镜像仓库地址
+          image: registry.example.com/enterprise-rag-api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef: { name: rag-config }
+            - secretRef: { name: rag-secret }
+          env:
+            # $(POSTGRES_PASSWORD) 由 K8s 从上面的 secret 环境变量展开
+            - name: DATABASE_URL
+              value: "postgresql+asyncpg://raguser:$(POSTGRES_PASSWORD)@postgres:5432/ragdb"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          volumeMounts:
+            - name: uploads
+              mountPath: /app/uploads
+          resources:
+            requests: { cpu: 250m, memory: 512Mi }
+            limits: { cpu: "2", memory: 2Gi }
+      volumes:
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: rag-uploads
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+  namespace: enterprise-rag
+spec:
+  selector:
+    app: api
+  ports:
+    - port: 8000
+      targetPort: 8000
+---
+# 上传文件共享存储（需支持 ReadWriteMany 的 StorageClass，如 NFS/cephfs）
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: rag-uploads
+  namespace: enterprise-rag
+spec:
+  accessModes: ["ReadWriteMany"]
+  resources:
+    requests:
+      storage: 50Gi
+---
+# API 水平自动扩缩（按 CPU）
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: api
+  namespace: enterprise-rag
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: api
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
