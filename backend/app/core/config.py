@@ -23,7 +23,7 @@ class Settings(BaseSettings):
 
     # ===== 应用基础配置 =====
     APP_NAME: str = "企业知识库RAG"
-    APP_VERSION: str = "1.0.0"
+    APP_VERSION: str = "2.0.0"
     DEBUG: bool = False
     LOG_LEVEL: str = "INFO"
 
