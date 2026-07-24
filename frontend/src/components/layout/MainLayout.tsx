@@ -7,6 +7,7 @@ import { Outlet, useNavigate, Link, useLocation } from 'react-router-dom'
 import {
   LucideDatabase,
   LucideMessageSquare,
+  LucideChartBar,
   LucideLogOut,
   LucideMenu,
   LucideUser,
@@ -29,6 +30,7 @@ export function MainLayout() {
   const navItems = [
     { path: '/kbs', label: '知识库', icon: LucideDatabase },
     { path: '/chat', label: 'AI 问答', icon: LucideMessageSquare },
+    { path: '/analytics', label: '数据看板', icon: LucideChartBar },
   ]
 
   return (

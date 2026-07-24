@@ -15,7 +15,7 @@ import { useState, useEffect } from 'react'
 import { AuthProvider } from './contexts/AuthContext'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { MainLayout, ProtectedRoute } from './components/layout'
-import { LoginPage, RegisterPage, KBListPage, KBDetailPage, ChatPage } from './pages'
+import { LoginPage, RegisterPage, KBListPage, KBDetailPage, ChatPage, AnalyticsPage } from './pages'
 
 export default function App() {
   const [ready, setReady] = useState(false)
@@ -44,6 +44,7 @@ export default function App() {
               <Route path="/kbs" element={<KBListPage />} />
               <Route path="/kbs/:id" element={<KBDetailPage />} />
               <Route path="/chat" element={<ChatPage />} />
+              <Route path="/analytics" element={<AnalyticsPage />} />
             </Route>
 
             {/* 默认跳转 */}
