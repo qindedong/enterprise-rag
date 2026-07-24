@@ -20,11 +20,13 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from app.api.deps import get_current_user, get_db
-from app.core.exceptions import NotFoundException, ValidationException
+from app.core.exceptions import ValidationException
 from app.core.logger import get_logger
+from app.core.rbac import require_kb_role
 from app.infrastructure.embedding_client import EmbeddingClient
 from app.infrastructure.llm_client import LLMClient
 from app.infrastructure.qdrant_client import QdrantStore
+from app.models.database.knowledge_base import MemberRole
 from app.models.database.user import User
 from app.models.request_response.response import (
     APIResponse,
@@ -36,7 +38,6 @@ from app.rag.pipeline import RetrievalPipeline
 from app.rag.query_rewriter import QueryRewriter
 from app.rag.reranker import Reranker
 from app.repositories.conversation_repository import ConversationRepository, MessageRepository
-from app.repositories.kb_repository import KBRepository
 from app.services.conversation_service import ConversationService
 from app.services.rag_service import RAGService
 
@@ -134,6 +135,7 @@ async def _save_turn(db, conv_id: UUID | None, question: str, answer: str, citat
 async def rag_chat_stream(
     kb_id: str,
     req: ChatRequest,
+    _kb=Depends(require_kb_role(MemberRole.VIEWER)),
     db=Depends(get_db),
 ):
     """
@@ -146,12 +148,6 @@ async def rag_chat_stream(
         event: done        — 完成 + 统计信息
         event: error       — 错误信息
     """
-    # 校验知识库
-    kb_repo = KBRepository(db)
-    kb = await kb_repo.find_by_id(UUID(kb_id))
-    if not kb:
-        raise NotFoundException("知识库", kb_id)
-
     conv_id = UUID(req.conversation_id) if req.conversation_id else None
     service = _get_rag_service()
     history = await _load_history(db, conv_id)
@@ -199,14 +195,10 @@ async def rag_chat_stream(
 async def rag_chat_sync(
     kb_id: str,
     req: ChatRequest,
+    _kb=Depends(require_kb_role(MemberRole.VIEWER)),
     db=Depends(get_db),
 ) -> APIResponse[dict]:
     """RAG 问答 — 非流式，返回完整 JSON 响应"""
-    kb_repo = KBRepository(db)
-    kb = await kb_repo.find_by_id(UUID(kb_id))
-    if not kb:
-        raise NotFoundException("知识库", kb_id)
-
     conv_id = UUID(req.conversation_id) if req.conversation_id else None
     service = _get_rag_service()
     history = await _load_history(db, conv_id)
@@ -228,6 +220,7 @@ async def rag_chat_sync(
 async def rag_search(
     kb_id: str,
     req: SearchRequest,
+    _kb=Depends(require_kb_role(MemberRole.VIEWER)),
     db=Depends(get_db),
 ) -> APIResponse[dict]:
     """
@@ -240,10 +233,6 @@ async def rag_search(
         bm25   — 纯全文检索（PostgreSQL tsvector + jieba）
         hybrid — 向量 + BM25，RRF 融合
     """
-    kb_repo = KBRepository(db)
-    kb = await kb_repo.find_by_id(UUID(kb_id))
-    if not kb:
-        raise NotFoundException("知识库", kb_id)
     # 释放事务/连接：后续检索+LLM 改写耗时不占用连接池（高并发关键）
     await db.commit()
 
@@ -292,6 +281,7 @@ async def rag_search(
 async def create_conversation(
     kb_id: str,
     question: str = Query(..., description="第一个问题"),
+    _kb=Depends(require_kb_role(MemberRole.VIEWER)),
     current_user: User = Depends(get_current_user),
     conv_service: ConversationService = Depends(_get_conv_service),
 ) -> APIResponse[dict]:

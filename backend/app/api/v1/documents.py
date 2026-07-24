@@ -15,8 +15,10 @@ from fastapi import APIRouter, Depends, File, Query, UploadFile
 
 from app.api.deps import get_db
 from app.core.logger import get_logger
+from app.core.rbac import require_doc_role, require_kb_role
 from app.infrastructure.embedding_client import EmbeddingClient
 from app.infrastructure.qdrant_client import QdrantStore
+from app.models.database.knowledge_base import MemberRole
 from app.models.request_response.response import (
     APIResponse,
     PageInfo,
@@ -24,7 +26,6 @@ from app.models.request_response.response import (
     PaginatedResponse,
 )
 from app.repositories.document_repository import ChunkRepository, DocumentRepository
-from app.repositories.kb_repository import KBRepository
 from app.services.document_service import DocumentService
 
 logger = get_logger(__name__)
@@ -66,17 +67,10 @@ def get_document_service(db=Depends(get_db)):
 async def upload_document(
     kb_id: str,
     file: UploadFile = File(...),
+    _kb=Depends(require_kb_role(MemberRole.EDITOR)),
     service: DocumentService = Depends(get_document_service),
 ):
-    """上传文档到知识库，自动触发解析、分块、向量化"""
-    # 校验知识库存在
-    kb_repo = KBRepository(service.doc_repo.session)
-    kb = await kb_repo.find_by_id(UUID(kb_id))
-    if not kb:
-        from app.core.exceptions import NotFoundException
-
-        raise NotFoundException("知识库", kb_id)
-
+    """上传文档到知识库，自动触发解析、分块、向量化（需 editor 及以上权限）"""
     content = await file.read()
     mime_type = file.content_type or "application/octet-stream"
 
@@ -98,9 +92,10 @@ async def list_documents(
     status: str | None = Query(None),
     file_type: str | None = Query(None),
     search: str | None = Query(None),
+    _kb=Depends(require_kb_role(MemberRole.VIEWER)),
     service: DocumentService = Depends(get_document_service),
 ):
-    """分页查询知识库下的文档列表"""
+    """分页查询知识库下的文档列表（需 viewer 及以上权限）"""
     items, total = await service.list_documents(
         kb_id=UUID(kb_id),
         page=page,
@@ -119,6 +114,7 @@ async def list_documents(
 @router.get("/documents/{doc_id}", summary="获取文档详情")
 async def get_document(
     doc_id: str,
+    _doc=Depends(require_doc_role(MemberRole.VIEWER)),
     service: DocumentService = Depends(get_document_service),
 ):
     """获取文档详细信息（含分块列表）"""
@@ -129,9 +125,10 @@ async def get_document(
 @router.delete("/documents/{doc_id}", summary="删除文档")
 async def delete_document(
     doc_id: str,
+    _doc=Depends(require_doc_role(MemberRole.ADMIN)),
     service: DocumentService = Depends(get_document_service),
 ):
-    """删除文档，同步清理 Qdrant 向量"""
+    """删除文档，同步清理 Qdrant 向量（需 admin 及以上权限）"""
     await service.delete_document(UUID(doc_id))
     return APIResponse(message="文档已删除")
 
@@ -139,8 +136,9 @@ async def delete_document(
 @router.post("/documents/{doc_id}/reprocess", summary="重新处理文档")
 async def reprocess_document(
     doc_id: str,
+    _doc=Depends(require_doc_role(MemberRole.EDITOR)),
     service: DocumentService = Depends(get_document_service),
 ):
-    """重新处理处理失败的文档"""
+    """重新处理处理失败的文档（需 editor 及以上权限）"""
     result = await service.reprocess(UUID(doc_id))
     return APIResponse(message="文档已重新提交处理", data=result)

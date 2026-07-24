@@ -10,13 +10,12 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
 
-from app.api.deps import get_current_user, get_db
-from app.core.exceptions import NotFoundException
+from app.api.deps import get_db
 from app.core.logger import get_logger
-from app.models.database.user import User
+from app.core.rbac import require_kb_role
+from app.models.database.knowledge_base import MemberRole
 from app.models.request_response.response import APIResponse
 from app.repositories.conversation_repository import MessageRepository
-from app.repositories.kb_repository import KBRepository
 
 logger = get_logger(__name__)
 
@@ -27,15 +26,10 @@ router = APIRouter(tags=["反馈分析"])
 async def feedback_stats(
     kb_id: str,
     days: int = Query(30, ge=1, le=90, description="趋势统计天数"),
-    current_user: User = Depends(get_current_user),
+    _kb=Depends(require_kb_role(MemberRole.VIEWER)),
     db=Depends(get_db),
 ):
-    """知识库问答反馈分析：满意率、按天趋势、最近负反馈明细"""
-    kb_repo = KBRepository(db)
-    kb = await kb_repo.find_by_id(UUID(kb_id))
-    if not kb:
-        raise NotFoundException("知识库", kb_id)
-
+    """知识库问答反馈分析：满意率、按天趋势、最近负反馈明细（需 viewer 及以上权限）"""
     msg_repo = MessageRepository(db)
 
     positive, negative = await msg_repo.feedback_totals(UUID(kb_id))

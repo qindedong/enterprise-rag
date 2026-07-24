@@ -15,9 +15,9 @@ from app.repositories.conversation_repository import ConversationRepository, Mes
 from app.repositories.kb_repository import KBRepository
 
 
-async def _create_test_kb(db_session: AsyncSession) -> KnowledgeBase:
+async def _create_test_kb(db_session: AsyncSession, owner_id=None) -> KnowledgeBase:
     repo = KBRepository(db_session)
-    kb = await repo.create(name="反馈测试库", owner_id=uuid4())
+    kb = await repo.create(name="反馈测试库", owner_id=owner_id or uuid4())
     await db_session.commit()
     return kb
 
@@ -103,11 +103,12 @@ class TestFeedbackStatsAPI:
     @pytest.mark.asyncio
     async def test_stats_endpoint(self, db_session: AsyncSession):
         """GET /feedback/stats 返回满意率与趋势结构"""
-        kb = await _create_test_kb(db_session)
-        await _seed_feedback(db_session, kb, [("positive", None), ("negative", "不准")])
-
         mock_user = MagicMock()
         mock_user.id = uuid4()
+        mock_user.role = "user"
+
+        kb = await _create_test_kb(db_session, owner_id=mock_user.id)
+        await _seed_feedback(db_session, kb, [("positive", None), ("negative", "不准")])
 
         async def _override_db():
             yield db_session
@@ -137,10 +138,11 @@ class TestFeedbackStatsAPI:
     @pytest.mark.asyncio
     async def test_stats_empty_kb(self, db_session: AsyncSession):
         """无反馈时满意率为 null，不报错"""
-        kb = await _create_test_kb(db_session)
-
         mock_user = MagicMock()
         mock_user.id = uuid4()
+        mock_user.role = "user"
+
+        kb = await _create_test_kb(db_session, owner_id=mock_user.id)
 
         async def _override_db():
             yield db_session

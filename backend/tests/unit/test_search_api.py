@@ -6,6 +6,7 @@ from uuid import uuid4
 import pytest
 from httpx import ASGITransport, AsyncClient
 
+from app.api.deps import get_current_user
 from app.main import app
 
 
@@ -30,14 +31,27 @@ def _fake_docs(n: int = 2) -> list[dict]:
     ]
 
 
+@pytest.fixture()
+def auth_override():
+    """以 super_admin 身份绕过 RBAC 成员校验（RBAC 本身由 test_rbac.py 覆盖）"""
+    user = MagicMock()
+    user.id = uuid4()
+    user.role = "super_admin"
+    app.dependency_overrides[get_current_user] = lambda: user
+    yield
+    app.dependency_overrides.clear()
+
+
 @pytest.mark.unit
 class TestSearchAPI:
     """POST /api/v1/knowledge-bases/{kb_id}/search"""
 
     @pytest.mark.asyncio
     @patch("app.api.v1.rag._get_rag_service")
-    @patch("app.api.v1.rag.KBRepository")
-    async def test_search_returns_results(self, mock_kb_repo_class, mock_get_service):
+    @patch("app.core.rbac.KBRepository")
+    async def test_search_returns_results(
+        self, mock_kb_repo_class, mock_get_service, auth_override
+    ):
         """测试：检索返回结构化结果"""
         kb = MagicMock()
         kb.id = uuid4()
@@ -65,8 +79,10 @@ class TestSearchAPI:
 
     @pytest.mark.asyncio
     @patch("app.api.v1.rag._get_rag_service")
-    @patch("app.api.v1.rag.KBRepository")
-    async def test_search_passes_top_k_params(self, mock_kb_repo_class, mock_get_service):
+    @patch("app.core.rbac.KBRepository")
+    async def test_search_passes_top_k_params(
+        self, mock_kb_repo_class, mock_get_service, auth_override
+    ):
         """测试：top_k / candidate_k 参数传递给检索管线"""
         kb = MagicMock()
         kb.id = uuid4()
@@ -91,8 +107,8 @@ class TestSearchAPI:
 
     @pytest.mark.asyncio
     @patch("app.api.v1.rag._get_rag_service")
-    @patch("app.api.v1.rag.KBRepository")
-    async def test_search_empty_results(self, mock_kb_repo_class, mock_get_service):
+    @patch("app.core.rbac.KBRepository")
+    async def test_search_empty_results(self, mock_kb_repo_class, mock_get_service, auth_override):
         """测试：检索结果为空时返回空列表"""
         kb = MagicMock()
         kb.id = uuid4()
@@ -115,8 +131,10 @@ class TestSearchAPI:
 
     @pytest.mark.asyncio
     @patch("app.api.v1.rag._get_rag_service")
-    @patch("app.api.v1.rag.KBRepository")
-    async def test_search_hybrid_mode_supported(self, mock_kb_repo_class, mock_get_service):
+    @patch("app.core.rbac.KBRepository")
+    async def test_search_hybrid_mode_supported(
+        self, mock_kb_repo_class, mock_get_service, auth_override
+    ):
         """测试：hybrid 模式透传给检索管线"""
         kb = MagicMock()
         kb.id = uuid4()
@@ -139,9 +157,9 @@ class TestSearchAPI:
 
     @pytest.mark.asyncio
     @patch("app.api.v1.rag._get_rag_service")
-    @patch("app.api.v1.rag.KBRepository")
+    @patch("app.core.rbac.KBRepository")
     async def test_search_pipeline_value_error_returns_422(
-        self, mock_kb_repo_class, mock_get_service
+        self, mock_kb_repo_class, mock_get_service, auth_override
     ):
         """测试：管线拒绝的模式返回校验错误"""
         kb = MagicMock()
@@ -165,8 +183,8 @@ class TestSearchAPI:
         assert data["code"] != 200
 
     @pytest.mark.asyncio
-    @patch("app.api.v1.rag.KBRepository")
-    async def test_search_kb_not_found(self, mock_kb_repo_class):
+    @patch("app.core.rbac.KBRepository")
+    async def test_search_kb_not_found(self, mock_kb_repo_class, auth_override):
         """测试：知识库不存在返回 404"""
         mock_repo = MagicMock()
         mock_repo.find_by_id = AsyncMock(return_value=None)
@@ -182,8 +200,15 @@ class TestSearchAPI:
         assert response.status_code == 404
 
     @pytest.mark.asyncio
-    async def test_search_invalid_mode_rejected_by_schema(self):
+    @patch("app.core.rbac.KBRepository")
+    async def test_search_invalid_mode_rejected_by_schema(self, mock_kb_repo_class, auth_override):
         """测试：非法 mode 被请求模型拒绝（422）"""
+        kb = MagicMock()
+        kb.id = uuid4()
+        mock_repo = MagicMock()
+        mock_repo.find_by_id = AsyncMock(return_value=kb)
+        mock_kb_repo_class.return_value = mock_repo
+
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
             response = await client.post(

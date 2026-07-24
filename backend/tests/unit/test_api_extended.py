@@ -8,17 +8,17 @@ class TestRAGAPI:
     """RAG 问答 API 测试"""
 
     @pytest.mark.asyncio
-    async def test_chat_sync_returns_error_without_kb(self, client, override_get_db):
-        """测试：不存在的知识库返回 404"""
+    async def test_chat_sync_requires_auth(self, client, override_get_db):
+        """测试：未登录访问问答接口返回 401（RBAC 前置拦截）"""
         from uuid import uuid4
 
         response = await client.post(
             f"/api/v1/knowledge-bases/{uuid4()}/chat/sync",
             json={"question": "答案是多少？"},
         )
-        assert response.status_code == 404
+        assert response.status_code == 401
         data = response.json()
-        assert data["code"] == 404
+        assert data["code"] == 401
 
 
 @pytest.mark.unit
