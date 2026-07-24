@@ -46,13 +46,28 @@ class RAGService:
         Returns:
             包含 answer, citations, token_usage, processing_time_ms 的字典
         """
+        start = time.time()
+        docs = await self.retrieval.retrieve(question, kb_id, history=self._trim(history))
+        return await self._generate(question, docs, history, start)
+
+    def _trim(self, history: list[dict] | None) -> list[dict] | None:
+        """按 Token 预算裁剪对话历史"""
+        from app.rag.context_builder import trim_history
+
+        trimmed = trim_history(history or [])
+        return trimmed or None
+
+    async def _generate(
+        self,
+        question: str,
+        docs: list[dict],
+        history: list[dict] | None,
+        start: float,
+    ) -> dict:
+        """检索结果 → Prompt 组装 → LLM 生成 → 引用校验（ask / ask_multi 共用）"""
         from app.rag.context_builder import history_to_chat_messages, trim_history
 
-        start = time.time()
         history = trim_history(history or [])
-
-        # Step 1: 检索（带历史做指代消解）
-        docs = await self.retrieval.retrieve(question, kb_id, history=history or None)
         if not docs:
             return {
                 "answer": "根据现有资料，无法回答这个问题。建议：1) 换个方式提问 2) 检查知识库是否有相关文档",
@@ -61,7 +76,7 @@ class RAGService:
                 "processing_time_ms": (time.time() - start) * 1000,
             }
 
-        # Step 2: 组装 Context（编号 + 文档名 + 内容）
+        # 组装 Context（编号 + 文档名 + 内容）
         context_parts = []
         citations = []
         for i, doc in enumerate(docs):
@@ -77,22 +92,23 @@ class RAGService:
                     "chunk_id": doc.get("chunk_id", ""),
                     "content_snippet": content[:200] if content else "",
                     "relevance_score": doc.get("score", 0),
+                    **({"kb_id": doc["kb_id"]} if doc.get("kb_id") else {}),
                 }
             )
 
         context = "\n\n---\n\n".join(context_parts)
 
-        # Step 3: 组装 Prompt
+        # 组装 Prompt
         system_prompt = PromptRegistry.render("rag_system")
         user_prompt = PromptRegistry.render("rag_user", context=context, question=question)
 
-        # Step 4: LLM 生成（注入裁剪后的对话历史）
+        # LLM 生成（注入裁剪后的对话历史）
         messages = [{"role": "system", "content": system_prompt}]
         messages.extend(history_to_chat_messages(history))
         messages.append({"role": "user", "content": user_prompt})
         result = await self.llm_client.generate(messages)
 
-        # Step 5: 校验引用
+        # 校验引用
         answer = result["answer"]
         cited_nums = {int(n) for n in re.findall(r"\[(\d+)\]", answer)}
         valid_citations = [c for c in citations if c["index"] in cited_nums]
@@ -106,6 +122,64 @@ class RAGService:
             "token_usage": result["usage"],
             "processing_time_ms": elapsed,
         }
+
+    # ===== 跨知识库检索 =====
+
+    async def retrieve_multi(
+        self,
+        question: str,
+        kb_ids: list[UUID],
+        top_k: int = 10,
+        candidate_k: int = 50,
+        mode: str = "vector",
+        history: list[dict] | None = None,
+    ) -> list[dict]:
+        """
+        跨知识库检索：各库独立检索后按相关性分数归并
+
+        每个结果附带 kb_id 字段标识来源知识库。
+        单个库检索失败不影响其他库（记日志跳过）。
+        """
+        import asyncio
+
+        trimmed = self._trim(history)
+        results = await asyncio.gather(
+            *[
+                self.retrieval.retrieve(
+                    question,
+                    kb_id,
+                    retrieval_top_k=candidate_k,
+                    rerank_top_k=top_k,
+                    mode=mode,
+                    history=trimmed,
+                )
+                for kb_id in kb_ids
+            ],
+            return_exceptions=True,
+        )
+
+        merged: list[dict] = []
+        for kb_id, res in zip(kb_ids, results, strict=False):
+            if isinstance(res, Exception):
+                logger.warning(f"跨库检索单库失败（已跳过）: kb={kb_id}: {res}")
+                continue
+            for doc in res:
+                doc["kb_id"] = str(kb_id)
+                merged.append(doc)
+
+        merged.sort(key=lambda d: d.get("score", 0), reverse=True)
+        return merged[:top_k]
+
+    async def ask_multi(
+        self,
+        question: str,
+        kb_ids: list[UUID],
+        history: list[dict] | None = None,
+    ) -> dict:
+        """跨知识库问答（非流式）：多库归并检索 → 单次生成"""
+        start = time.time()
+        docs = await self.retrieve_multi(question, kb_ids, history=history)
+        return await self._generate(question, docs, history, start)
 
     async def ask_stream(
         self,

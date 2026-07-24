@@ -24,7 +24,7 @@ import {
 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { chatStream } from '../api/rag'
+import { chatStream, chatMultiSync } from '../api/rag'
 import { listKBs } from '../api/knowledgeBases'
 import { listConversations, createConversation, listMessages, submitFeedback } from '../api/conversations'
 import type { KnowledgeBase, Conversation, Citation } from '../types'
@@ -38,6 +38,9 @@ interface ChatMessage {
   isStreaming?: boolean
   feedback?: 'positive' | 'negative' | null
 }
+
+/** 跨知识库选择的特殊 ID */
+const MULTI_KB = '__multi__'
 
 export function ChatPage() {
   const [searchParams] = useSearchParams()
@@ -93,9 +96,12 @@ export function ChatPage() {
     })
   }, [initialKbId])
 
-  /** 加载对话列表 */
+  /** 加载对话列表（跨库模式无对话历史） */
   const loadConversations = useCallback(async () => {
-    if (!selectedKbId) return
+    if (!selectedKbId || selectedKbId === MULTI_KB) {
+      setConversations([])
+      return
+    }
     try {
       const res = await listConversations({ kb_id: selectedKbId, page_size: 50 })
       setConversations(res.data.items)
@@ -106,7 +112,7 @@ export function ChatPage() {
 
   /** 新建对话 */
   const handleNewChat = async () => {
-    if (!selectedKbId) return
+    if (!selectedKbId || selectedKbId === MULTI_KB) return
     try {
       const res = await createConversation({ kb_id: selectedKbId, question: '新对话' })
       setConversations((prev) => [res.data, ...prev])
@@ -164,6 +170,36 @@ export function ChatPage() {
     ])
     setIsGenerating(true)
     setStatus({ phase: 'searching' })
+
+    // ===== 跨知识库模式：非流式，多库归并检索 =====
+    if (selectedKbId === MULTI_KB) {
+      try {
+        setStatus({ phase: 'generating' })
+        const res = await chatMultiSync(kbList.map((k) => k.id), question)
+        const { answer, citations } = res.data
+        const typedCitations = (citations ?? []) as Citation[]
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === aiMsgId
+              ? { ...m, content: answer, citations: typedCitations, isStreaming: false }
+              : m,
+          ),
+        )
+        if (typedCitations.length > 0) setActiveCitations(typedCitations)
+      } catch (err) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === aiMsgId
+              ? { ...m, content: `❌ ${err instanceof Error ? err.message : '请求失败'}`, isStreaming: false }
+              : m,
+          ),
+        )
+      } finally {
+        setIsGenerating(false)
+        setStatus(null)
+      }
+      return
+    }
 
     // 流式接收
     await chatStream(
@@ -253,6 +289,8 @@ export function ChatPage() {
   }
 
   const currentKb = kbList.find((k) => k.id === selectedKbId)
+  const isMulti = selectedKbId === MULTI_KB
+  const currentKbName = isMulti ? '全部知识库' : currentKb?.name
 
   return (
     <div className="flex h-[calc(100vh-4rem)]">
@@ -309,11 +347,21 @@ export function ChatPage() {
               className="flex items-center gap-2 px-3 py-1.5 bg-surface-raised rounded-theme text-sm text-ink hover:bg-line-soft transition-colors border border-line"
             >
               <LucideBookOpen className="h-3.5 w-3.5 text-accent" />
-              <span className="max-w-[120px] truncate">{currentKb?.name || '选择知识库'}</span>
+              <span className="max-w-[120px] truncate">{currentKbName || '选择知识库'}</span>
               <LucideChevronDown className="h-3.5 w-3.5 text-ink-muted" />
             </button>
             {showKbSelector && (
               <div className="absolute top-full left-0 mt-1 w-56 bg-surface-raised rounded-theme shadow-lg border border-line z-40 overflow-hidden">
+                {kbList.length > 1 && (
+                  <button
+                    onClick={() => { setSelectedKbId(MULTI_KB); setShowKbSelector(false); setActiveConvId(null); setMessages([]) }}
+                    className={`w-full text-left px-4 py-2.5 text-sm hover:bg-line-soft transition-colors border-b border-line-soft ${
+                      isMulti ? 'bg-accent/10 text-accent' : 'text-ink'
+                    }`}
+                  >
+                    🌐 全部知识库（跨库检索）
+                  </button>
+                )}
                 {kbList.map((kb) => (
                   <button
                     key={kb.id}
@@ -346,7 +394,7 @@ export function ChatPage() {
             <div className="flex flex-col items-center justify-center h-full text-ink-muted px-4">
               <LucideBookOpen className="h-16 w-16 mb-4 text-ink-muted" />
               <p className="text-lg font-medium text-ink-muted mb-2">
-                {currentKb ? `向「${currentKb.name}」提问` : '选择一个知识库开始对话'}
+                {isMulti ? '跨全部知识库提问' : currentKb ? `向「${currentKb.name}」提问` : '选择一个知识库开始对话'}
               </p>
               <p className="text-sm text-ink-muted">基于知识库文档进行智能问答，每个回答都有据可查</p>
             </div>

@@ -39,6 +39,18 @@ export async function chatSync(
   return res.data
 }
 
+/** 跨知识库问答（非流式）：多库归并检索后单次生成 */
+export async function chatMultiSync(
+  kbIds: string[],
+  question: string,
+): Promise<APIResponse<RAGResponse>> {
+  const res = await apiClient.post('/chat/multi/sync', {
+    question,
+    kb_ids: kbIds,
+  })
+  return res.data
+}
+
 /**
  * SSE 流式 RAG 问答 — 基于 fetch + ReadableStream
  *

@@ -105,6 +105,24 @@ class FeedbackRequest(BaseModel):
     comment: str | None = Field(None)
 
 
+class MultiSearchRequest(BaseModel):
+    """跨知识库检索请求"""
+
+    question: str = Field(..., min_length=1, max_length=2000, description="检索问题")
+    kb_ids: list[str] = Field(..., min_length=1, max_length=10, description="知识库 ID 列表")
+    top_k: int = Field(10, ge=1, le=50, description="归并后返回数量")
+    candidate_k: int = Field(50, ge=1, le=100, description="单库检索候选数")
+    mode: str = Field("hybrid", pattern="^(vector|bm25|hybrid)$", description="检索模式")
+
+
+class MultiChatRequest(BaseModel):
+    """跨知识库问答请求"""
+
+    question: str = Field(..., min_length=1, max_length=2000, description="用户问题")
+    kb_ids: list[str] = Field(..., min_length=1, max_length=10, description="知识库 ID 列表")
+    temperature: float = Field(0.3, ge=0, le=1, description="LLM 温度")
+
+
 # ===== RAG 问答 =====
 
 
@@ -272,6 +290,88 @@ async def rag_search(
             "processing_time_ms": elapsed,
         }
     )
+
+
+# ===== 跨知识库检索 / 问答 =====
+
+
+@router.post("/search/multi", summary="跨知识库检索（不生成答案）")
+async def rag_search_multi(
+    req: MultiSearchRequest,
+    current_user: User = Depends(get_current_user),
+    db=Depends(get_db),
+) -> APIResponse[dict]:
+    """
+    跨知识库独立检索 — 各库独立检索后按相关性归并，只检索不生成
+
+    每个知识库逐一校验 viewer 权限，任一库无权限则整体 403。
+    """
+    from app.core.rbac import check_kb_permission
+
+    kb_ids = [UUID(x) for x in req.kb_ids]
+    for kb_id in kb_ids:
+        await check_kb_permission(db, kb_id, current_user, MemberRole.VIEWER)
+    # 释放事务/连接：检索耗时不占用连接池
+    await db.commit()
+
+    start = time.time()
+    service = _get_rag_service()
+    try:
+        docs = await service.retrieve_multi(
+            req.question,
+            kb_ids,
+            top_k=req.top_k,
+            candidate_k=req.candidate_k,
+            mode=req.mode,
+        )
+    except ValueError as e:
+        raise ValidationException(str(e)) from e
+    elapsed = (time.time() - start) * 1000
+
+    results = [
+        {
+            "rank": i + 1,
+            "kb_id": doc.get("kb_id", ""),
+            "chunk_id": doc.get("chunk_id", ""),
+            "document_title": doc.get("document_title", doc.get("title", "未知文档")),
+            "content": doc.get("content", ""),
+            "page_number": doc.get("page_number"),
+            "score": doc.get("score", 0),
+        }
+        for i, doc in enumerate(docs)
+    ]
+
+    return APIResponse(
+        data={
+            "question": req.question,
+            "mode": req.mode,
+            "kb_ids": [str(k) for k in kb_ids],
+            "results": results,
+            "total": len(results),
+            "processing_time_ms": elapsed,
+        }
+    )
+
+
+@router.post("/chat/multi/sync", summary="跨知识库问答（非流式）")
+async def rag_chat_multi_sync(
+    req: MultiChatRequest,
+    current_user: User = Depends(get_current_user),
+    db=Depends(get_db),
+) -> APIResponse[dict]:
+    """跨知识库 RAG 问答 — 多库归并检索后单次生成，引用附带来源知识库"""
+    from app.core.rbac import check_kb_permission
+
+    kb_ids = [UUID(x) for x in req.kb_ids]
+    for kb_id in kb_ids:
+        await check_kb_permission(db, kb_id, current_user, MemberRole.VIEWER)
+    # 释放事务/连接：LLM 生成耗时不占用连接池
+    await db.commit()
+
+    service = _get_rag_service()
+    result = await service.ask_multi(req.question, kb_ids)
+    result["kb_ids"] = [str(k) for k in kb_ids]
+    return APIResponse(data=result)
 
 
 # ===== 对话管理（内联到 rag 路由，简化依赖注入） =====
