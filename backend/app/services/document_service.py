@@ -35,6 +35,7 @@ settings = get_settings()
 # 允许的文件类型
 ALLOWED_MIME_TYPES = {
     "application/pdf": "pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
     "text/markdown": "md",
     "text/x-markdown": "md",
     "text/plain": "txt",
@@ -91,6 +92,7 @@ class DocumentService:
             ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
             ext_to_mime = {
                 "pdf": "application/pdf",
+                "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                 "md": "text/markdown",
                 "txt": "text/plain",
                 "markdown": "text/markdown",
@@ -98,7 +100,9 @@ class DocumentService:
             mime_type = ext_to_mime.get(ext, mime_type)
 
         if mime_type not in ALLOWED_MIME_TYPES:
-            raise ValidationException(f"不支持的文件类型: {mime_type}。支持: PDF, Markdown, TXT")
+            raise ValidationException(
+                f"不支持的文件类型: {mime_type}。支持: PDF, Word, Markdown, TXT"
+            )
 
         file_size = len(content)
         max_bytes = settings.MAX_FILE_SIZE_MB * 1024 * 1024

@@ -93,7 +93,11 @@ async def main() -> int:
 
     if args.endpoint == "search":
         url = f"{args.base_url}/api/v1/knowledge-bases/{args.kb_id}/search"
-        payload_fn = lambda i: {"question": QUESTIONS[i % len(QUESTIONS)], "mode": args.mode, "top_k": 10}  # noqa: E731
+        payload_fn = lambda i: {  # noqa: E731
+            "question": QUESTIONS[i % len(QUESTIONS)],
+            "mode": args.mode,
+            "top_k": 10,
+        }
     else:
         url = f"{args.base_url}/api/v1/knowledge-bases/{args.kb_id}/chat/sync"
         payload_fn = lambda i: {"question": QUESTIONS[i % len(QUESTIONS)]}  # noqa: E731

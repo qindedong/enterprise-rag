@@ -8,6 +8,7 @@ from typing import ClassVar
 
 from app.core.logger import get_logger
 from app.parsers.base import BaseParser
+from app.parsers.docx_parser import DocxParser
 from app.parsers.markdown_parser import MarkdownParser
 from app.parsers.pdf_parser import PDFParser
 from app.parsers.text_parser import TextParser
@@ -24,7 +25,7 @@ class ParserRegistry:
     @classmethod
     def initialize(cls) -> None:
         """注册所有解析器"""
-        parsers = [PDFParser(), MarkdownParser(), TextParser()]
+        parsers = [PDFParser(), DocxParser(), MarkdownParser(), TextParser()]
         for parser in parsers:
             for fmt in parser.supported_formats:
                 cls._parsers[fmt] = parser

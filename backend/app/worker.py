@@ -157,7 +157,16 @@ async def process_document(
     try:
         # Step 1: 解析
         logger.info(f"📖 解析文档: {doc_id}")
-        mime = f"application/{file_ext}" if file_ext == "pdf" else f"text/{file_ext}"
+        from app.parsers.docx_parser import DOCX_MIME
+
+        ext_to_mime = {
+            "pdf": "application/pdf",
+            "docx": DOCX_MIME,
+            "md": "text/markdown",
+            "markdown": "text/markdown",
+            "txt": "text/plain",
+        }
+        mime = ext_to_mime.get(file_ext, f"text/{file_ext}")
         try:
             parser = ParserRegistry.get_parser(mime)
             raw_text = parser.parse(file_path)
