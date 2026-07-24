@@ -21,6 +21,7 @@ import {
 import { getKB, getKBStats, deleteKB } from '../api/knowledgeBases'
 import { listDocuments, uploadDocument, deleteDocument, reprocessDocument } from '../api/documents'
 import { Loading } from '../components/common/Loading'
+import { FeedbackPanel } from '../components/FeedbackPanel'
 import { Empty } from '../components/common/Empty'
 import { ErrorState } from '../components/common/ErrorState'
 import { Pagination } from '../components/common/Pagination'
@@ -243,6 +244,9 @@ export function KBDetailPage() {
           </div>
         )}
       </div>
+
+      {/* ===== 反馈分析面板 ===== */}
+      <FeedbackPanel kbId={id!} />
 
       {/* ===== 上传区 ===== */}
       <div

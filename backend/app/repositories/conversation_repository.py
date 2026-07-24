@@ -134,3 +134,47 @@ class MessageRepository:
             .where(Message.id == msg_id)
             .values(feedback=fb, feedback_comment=comment)
         )
+
+    async def feedback_daily_counts(self, kb_id: UUID, since) -> list[tuple]:
+        """按天统计知识库内正/负反馈数量（since 起，含当天）"""
+        day = func.date(Message.created_at)
+        q = (
+            select(day, Message.feedback, func.count())
+            .join(Conversation, Message.conversation_id == Conversation.id)
+            .where(
+                Conversation.kb_id == kb_id,
+                Message.feedback.is_not(None),
+                Message.created_at >= since,
+            )
+            .group_by(day, Message.feedback)
+            .order_by(day)
+        )
+        result = await self.session.execute(q)
+        return list(result.all())
+
+    async def feedback_totals(self, kb_id: UUID) -> tuple[int, int]:
+        """知识库反馈总数（positive, negative）"""
+        q = (
+            select(Message.feedback, func.count())
+            .join(Conversation, Message.conversation_id == Conversation.id)
+            .where(Conversation.kb_id == kb_id, Message.feedback.is_not(None))
+            .group_by(Message.feedback)
+        )
+        result = await self.session.execute(q)
+        counts = {row[0]: row[1] for row in result.all()}
+        return (
+            counts.get(MsgFeedback.POSITIVE, 0),
+            counts.get(MsgFeedback.NEGATIVE, 0),
+        )
+
+    async def recent_negative_feedback(self, kb_id: UUID, limit: int = 10) -> list[Message]:
+        """最近的负反馈消息（含反馈备注，用于人工复盘）"""
+        q = (
+            select(Message)
+            .join(Conversation, Message.conversation_id == Conversation.id)
+            .where(Conversation.kb_id == kb_id, Message.feedback == MsgFeedback.NEGATIVE)
+            .order_by(Message.created_at.desc())
+            .limit(limit)
+        )
+        result = await self.session.execute(q)
+        return list(result.scalars().all())
