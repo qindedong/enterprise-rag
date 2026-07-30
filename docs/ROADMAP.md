@@ -394,3 +394,14 @@ R6 (进度) > R1 (LLM API) > R3 (检索效果) > R2 (Embedding) > R4 (解析) > 
 ---
 
 > **下一步**: 阅读 [详细任务拆分 (TASKS.md)](./TASKS.md) 查看每个 Sprint 的具体 Task。
+
+---
+
+## 7. Sprint 8 剩余任务清单
+
+| ID | 任务 | 优先级 | 状态 | 说明 |
+|----|------|:---:|:---:|------|
+| 8.1 | 前后端全链路联调 | P0 | 🔧 | 12 个 P0 User Story 手动验证通过 |
+| 8.4 | Docker 镜像构建验证 | P0 | ⏸️ | 受 Docker Hub 网络限制，无法拉取基础镜像 |
+| 8.10 | 文档一致性审核 | P1 | ✅ | PRD/ARCH/API/DATABASE 一致性核验完成，ROADMAP + TASKS 已更新 |
+| 8.12 | Git Tag + Release Notes | P1 | 🔧 | 待创建 v2.1.0 Tag
