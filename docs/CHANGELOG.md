@@ -10,9 +10,27 @@
 ## [Unreleased]
 
 ### Added
-- 项目初始化，创建基础目录结构
+- **幻觉检测**：`QualityChecker` 质量检查器，含引用越界检测与内容匹配度检查
+- **性能压测**：Locust 压测脚本 (`perf/locustfile.py` + `perf/run_load_test.py`)，
+  100 并发 P95=6s < 15s（达标）
+
+### Changed
+- **检索参数调优**：`RETRIEVAL_TOP_K` 50→20, `RERANK_TOP_K` 10→8，
+  热缓存检索 P95 从 2465ms 降至 33ms
+- **数据库性能索引**：新增 8 个关键索引（documents/conversations/messages/
+  kb_members/knowledge_bases/api_keys），消除全表扫描
+- **连接池优化**：`pool_recycle` 60→30min, 禁用 statement cache, 减小内存占用
+- **Embedding 缓存**：查询向量结果复用，热缓存后单次向量化 < 10ms
+- **本地 Embedding 离线模式**：`local_files_only=True`，避免 HuggingFace 超时
+- **检索评估脚本**：`eval/run_eval.py` 命令行工具，支持三种检索模式
+
+### Fixed
+- Worker 无法处理文档（Docker Hub 网络超时 → 本地离线启动）
+- RAG 非流式端点 `db.commit()` → `db.close()` 避免连接池耗尽
+- 多个旧 uvicorn `--reload` 进程占用端口导致启动失败
 
 ---
+
 
 ## [2.0.0] — 2026-07-24
 
