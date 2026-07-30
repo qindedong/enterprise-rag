@@ -68,8 +68,8 @@ class Settings(BaseSettings):
     # ===== RAG 参数配置 =====
     CHUNK_SIZE: int = 500
     CHUNK_OVERLAP: int = 100
-    RETRIEVAL_TOP_K: int = 50
-    RERANK_TOP_K: int = 10
+    RETRIEVAL_TOP_K: int = 20
+    RERANK_TOP_K: int = 8
 
     # ===== SSO / OIDC 配置 =====
     # 支持任意 OIDC Provider（Keycloak / Authentik / Auth0 / Entra ID 等）

@@ -169,8 +169,8 @@ async def rag_chat_stream(
     conv_id = UUID(req.conversation_id) if req.conversation_id else None
     service = _get_rag_service()
     history = await _load_history(db, conv_id)
-    # 释放事务/连接：后续 LLM 生成耗时不占用连接池（高并发关键）
-    await db.commit()
+    # 先释放数据库连接（检索+LLM 耗时可达数十秒，不占用连接池）
+    await db.close()
 
     async def event_stream():
         # 发送对话 ID（供前端后续多轮会话使用）
@@ -195,8 +195,13 @@ async def rag_chat_stream(
                     pass
             yield event
 
-        # 多轮对话：保存本轮问答
-        await _save_turn(db, conv_id, req.question, full_answer, citations)
+        # 多轮对话：保存本轮问答（打开新 session）
+        if conv_id:
+            from app.core.database import async_session
+
+            async with async_session() as save_db:
+                await _save_turn(save_db, conv_id, req.question, full_answer, citations)
+                await save_db.commit()
 
     return StreamingResponse(
         event_stream(),
@@ -220,13 +225,16 @@ async def rag_chat_sync(
     conv_id = UUID(req.conversation_id) if req.conversation_id else None
     service = _get_rag_service()
     history = await _load_history(db, conv_id)
-    # 释放事务/连接：后续 LLM 生成耗时不占用连接池（高并发关键）
-    await db.commit()
+    # 先释放数据库连接（检索+LLM 耗时可达数十秒，不占用连接池）
+    await db.close()
     result = await service.ask(req.question, UUID(kb_id), conv_id, history)
 
     if conv_id:
-        result["conversation_id"] = str(conv_id)
-        await _save_turn(db, conv_id, req.question, result["answer"], result["citations"])
+        # 保存对话时重新打开一个新 session
+        from app.core.database import async_session
+        async with async_session() as save_db:
+            await _save_turn(save_db, conv_id, req.question, result["answer"], result["citations"])
+            await save_db.commit()
 
     return APIResponse(data=result)
 

@@ -237,3 +237,27 @@ class KBService:
             "created_at": kb.created_at.isoformat() if kb.created_at else None,
             "updated_at": kb.updated_at.isoformat() if kb.updated_at else None,
         }
+
+    def _to_detail_response(self, kb) -> dict:
+        """转换为详情响应格式"""
+        return {
+            "id": str(kb.id),
+            "name": kb.name,
+            "description": kb.description,
+            "owner": {
+                "id": str(kb.owner.id),
+                "display_name": kb.owner.display_name,
+            },
+            "chunk_size": kb.chunk_size,
+            "chunk_overlap": kb.chunk_overlap,
+            "embedding_model": kb.embedding_model,
+            "status": kb.status.value if kb.status else "active",
+            "stats": {
+                "document_count": getattr(kb, "document_count", 0) or 0,
+                "chunk_count": getattr(kb, "chunk_count", 0) or 0,
+                "total_questions": getattr(kb, "total_questions", 0) or 0,
+            },
+            "member_count": len(kb.members) if kb.members else 0,
+            "created_at": kb.created_at.isoformat() if kb.created_at else None,
+            "updated_at": kb.updated_at.isoformat() if kb.updated_at else None,
+        }

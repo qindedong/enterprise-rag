@@ -17,9 +17,10 @@ from app.core.logger import get_logger
 
 logger = get_logger(__name__)
 
-# 本地模型缓存
+# 本地模型与 embedding 缓存
 _local_model = None
 _local_model_name = None
+_embedding_cache: dict[str, list[float]] = {}
 
 
 def _get_local_model(model_name: str):
@@ -29,7 +30,10 @@ def _get_local_model(model_name: str):
         from sentence_transformers import SentenceTransformer
 
         logger.info(f"正在加载本地 Embedding 模型: {model_name} ...")
-        _local_model = SentenceTransformer(model_name)
+        _local_model = SentenceTransformer(
+            model_name,
+            local_files_only=True,  # 离线模式，不连 Hugging Face
+        )
         _local_model_name = model_name
         logger.info(f"模型加载完成，向量维度: {_local_model.get_sentence_embedding_dimension()}")
     return _local_model
@@ -74,8 +78,11 @@ class EmbeddingClient:
             logger.info(f"Embedding 使用远程 API: {settings.EMBEDDING_BASE_URL}")
 
     async def embed(self, text: str) -> list[float]:
-        """单条文本向量化"""
+        """单条文本向量化（带缓存）"""
+        if text in _embedding_cache:
+            return _embedding_cache[text]
         embeddings = await self.embed_batch([text])
+        _embedding_cache[text] = embeddings[0]
         return embeddings[0]
 
     async def embed_batch(self, texts: list[str], max_retries: int = 3) -> list[list[float]]:

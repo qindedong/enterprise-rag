@@ -108,10 +108,19 @@ class RAGService:
         messages.append({"role": "user", "content": user_prompt})
         result = await self.llm_client.generate(messages)
 
-        # 校验引用
+        # 校验引用 + 幻觉检测
         answer = result["answer"]
         cited_nums = {int(n) for n in re.findall(r"\[(\d+)\]", answer)}
         valid_citations = [c for c in citations if c["index"] in cited_nums]
+
+        # 幻觉检测：引用编号越界 + 质量检查
+        max_index = len(citations)
+        hallucinated_indices = [n for n in cited_nums if n < 1 or n > max_index]
+        if hallucinated_indices:
+            logger.warning(
+                f"疑似幻觉引用: 索引 {hallucinated_indices} 超出有效范围 1-{max_index}"
+            )
+            valid_citations = [c for c in valid_citations if c["index"] not in hallucinated_indices]
 
         elapsed = (time.time() - start) * 1000
         logger.info(f"RAG 完成: 耗时 {elapsed:.0f}ms, 引用 {len(valid_citations)} 条")

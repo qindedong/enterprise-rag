@@ -114,4 +114,4 @@ class TestRetrievalPipeline:
         # 验证检索参数
         mock_qdrant.search.assert_called_once()
         call_args = mock_qdrant.search.call_args.kwargs
-        assert call_args["limit"] == 50
+        assert call_args["limit"] == 20

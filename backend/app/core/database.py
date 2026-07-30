@@ -23,7 +23,8 @@ async_engine = create_async_engine(
     max_overflow=settings.DB_MAX_OVERFLOW,
     echo=settings.DB_ECHO,
     pool_pre_ping=True,  # 连接前检查有效性
-    pool_recycle=3600,  # 连接回收时间（秒）
+    pool_recycle=1800,  # 连接回收时间（30 分钟）
+    connect_args={"statement_cache_size": 0},  # 禁用 statement cache（减少内存占用）
 )
 
 # 异步会话工厂

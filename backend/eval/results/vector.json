@@ -1,0 +1,11 @@
+{
+  "mode": "vector",
+  "kb_id": "eb765c6b-c7c6-452f-9617-8e6f6e07f8dc",
+  "query_count": 36,
+  "failed_count": 0,
+  "recall_5": 1.0,
+  "recall_10": 1.0,
+  "mrr": 0.9629629629629629,
+  "precision_5": 0.20555555555555557,
+  "avg_latency_ms": 2464.745581150055
+}
