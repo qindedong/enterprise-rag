@@ -15,6 +15,7 @@ from app.parsers.pdf.models import (
     PageProfile,
     PageType,
     StructNode,
+    StructuredTable,
     TocNode,
 )
 
@@ -25,5 +26,6 @@ __all__ = [
     "PageProfile",
     "PageType",
     "StructNode",
+    "StructuredTable",
     "TocNode",
 ]

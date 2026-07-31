@@ -239,6 +239,7 @@ async def process_document(
                             "section_path": meta.section_path,
                             "kind": meta.kind,
                             "clause_no": meta.clause_no,
+                            "table_id": meta.table_id,
                         }
                         if meta
                         else {}
@@ -272,6 +273,7 @@ async def process_document(
                     "section_path": " / ".join(m.section_path),
                     "kind": m.kind,
                     "clause_no": m.clause_no,
+                    "table_id": m.table_id,
                 })
             point = PointStruct(
                 id=chunk_ids[i],

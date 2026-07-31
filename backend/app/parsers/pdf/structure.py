@@ -245,13 +245,54 @@ def build_structure(
     if doc is not None:
         structure.toc = extract_toc(doc)
 
-    # 4+5. 标题识别 + 节点流生成
+    # 4+5. 标题识别 + 节点流生成（表格在页内按纵坐标与文本块交错插入）
+    from app.parsers.pdf.tables import block_in_table, extract_tables, find_caption
+
     section_path: list[str] = []
     toc_iter = iter(structure.toc)
     next_toc = next(toc_iter, None)
 
     for p in pages:
+        # 表格检测：表内文本块归属表格，不再进入段落流
+        tables = []
+        if doc is not None:
+            try:
+                tables = extract_tables(doc[p.page_no - 1], p.page_no)
+            except Exception as e:
+                logger.warning(f"第 {p.page_no} 页表格检测异常: {e}")
+        caption_blocks: set[int] = set()
+        for t in tables:
+            cap = find_caption(t, p.blocks)
+            if cap:
+                t.caption = cap
+                for blk in p.blocks:
+                    if blk.kind == "text" and blk.text.strip() == cap:
+                        caption_blocks.add(id(blk))
+                        break
+
+        # 页内事件流：文本块 + 表格按 y 坐标交错排序
+        events: list[tuple[str, float, object]] = []
         for blk in p.blocks:
+            if blk.kind == "text" and (
+                block_in_table(blk, tables) or id(blk) in caption_blocks
+            ):
+                continue
+            events.append(("block", blk.y0, blk))
+        for t in tables:
+            events.append(("table", t.bbox[1], t))
+        events.sort(key=lambda e: e[1])
+
+        for event_kind, _y, obj in events:
+            if event_kind == "table":
+                t = obj
+                structure.nodes.append(StructNode(
+                    kind="table", text=t.caption or "",
+                    page_start=p.page_no, page_end=p.page_no,
+                    section_path=list(section_path), table=t,
+                ))
+                continue
+
+            blk = obj
             if blk.kind != "text":
                 # 图像块 → figure 占位节点（视觉理解为 P3，这里保留位置与页码）
                 structure.nodes.append(StructNode(

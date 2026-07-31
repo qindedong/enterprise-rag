@@ -10,6 +10,14 @@
 ## [Unreleased]
 
 ### Added
+- **PDF 四层架构 P1**（表格结构化 + 条款边界切片）：
+  - `parsers/pdf/tables.py`：`find_tables` 检测线框表格 → 表头 + 行列结构化，
+    表注关联（"表 2-1 xxx"），表内文本块归属表格不再进入段落流
+  - 表格 chunk 结构化渲染（"行 N：列名=值"，数字绑定指标与年份），
+    长表按行分组且每组重复表头
+  - 条款边界切片：`第X条` 为不可断边界，短条款合并只在条款边界处发生，
+    单条款 chunk 标注 `clause_no`（"第十二条"→"第12条"）
+  - `document_chunks.metadata.table_id` + Qdrant payload 同步扩展
 - **PDF 四层架构 P0**（`docs/pdf_pipeline_architecture.md`）：
   - L1 解析层：`parsers/pdf/classifier.py` 逐页分类（原生/扫描/图文混排），
     `native_extractor.py` 块级抽取（bbox 坐标 + 图像区域感知）

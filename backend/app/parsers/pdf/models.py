@@ -76,6 +76,40 @@ class TocNode:
 
 
 @dataclass
+class StructuredTable:
+    """L2 结构化表格（行列 + 表头）"""
+
+    table_id: str                          # "表 2-1" 或 "table-p8-1"
+    page_no: int
+    bbox: tuple[float, float, float, float]
+    caption: str | None = None
+    headers: list[str] = field(default_factory=list)
+    rows: list[list[str]] = field(default_factory=list)
+
+    def to_text(self, max_rows: int | None = None,
+                header_repeat: bool = False) -> str:
+        """渲染为带语义的结构化文本（供切片/检索）
+
+        每行展开为 "列名1=值, 列名2=值" 形式，数字绑定指标与年份。
+        """
+        lines = []
+        if self.caption:
+            lines.append(f"表格：{self.caption}")
+        if self.headers:
+            lines.append("表头：" + " | ".join(self.headers))
+        rows = self.rows if max_rows is None else self.rows[:max_rows]
+        for i, row in enumerate(rows, 1):
+            if self.headers and len(row) == len(self.headers):
+                pairs = "，".join(
+                    f"{h}={v}" for h, v in zip(self.headers, row) if v
+                )
+                lines.append(f"行 {i}：{pairs}")
+            else:
+                lines.append(f"行 {i}：" + " | ".join(c for c in row if c))
+        return "\n".join(lines)
+
+
+@dataclass
 class StructNode:
     """L2 输出：有序结构节点"""
 
@@ -86,6 +120,7 @@ class StructNode:
     level: int = 0               # 标题层级（非标题为 0）
     section_path: list[str] = field(default_factory=list)  # 章节路径快照
     clause_no: str | None = None  # 合同条款号，如 "第12条"
+    table: StructuredTable | None = None  # kind="table" 时的结构化表格
 
 
 @dataclass
