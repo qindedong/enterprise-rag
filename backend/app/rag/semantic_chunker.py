@@ -251,15 +251,17 @@ class SemanticChunker:
         if first.kind == "table" and first.table:
             return self._table_chunks(first)
 
-        # 图表摘要占位 chunk（视觉理解为 P3，先保留可检索占位）
+        # 图表摘要 chunk：P3 视觉理解已生成描述时携带真实内容，否则占位
         if first.kind == "figure":
             page_range = (
                 f"第 {first.page_start} 页" if first.page_start == first.page_end
                 else f"第 {first.page_start}-{first.page_end} 页"
             )
             section = " / ".join(first.section_path) or "未分章节"
+            header = f"[图片/图表：{section}，{page_range}]"
+            text = f"{header}\n{first.text}" if first.text.strip() else header
             return [StructuredChunk(
-                text=f"[图片/图表：{section}，{page_range}]",
+                text=text,
                 page_start=first.page_start, page_end=first.page_end,
                 section_path=list(first.section_path), kind="figure_summary",
             )]

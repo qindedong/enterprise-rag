@@ -22,6 +22,8 @@ class LLMClient:
     def __init__(self):
         settings = get_settings()
         self.model = settings.LLM_MODEL
+        # 视觉模型：未单独配置时回退主模型（不支持视觉时调用方降级）
+        self.vision_model = getattr(settings, "VISION_MODEL", None) or self.model
         self.temperature = settings.LLM_TEMPERATURE
         self.max_tokens = settings.LLM_MAX_TOKENS
 
@@ -86,3 +88,52 @@ class LLMClient:
                     yield chunk.choices[0].delta.content
         except Exception as e:
             raise LLMException(f"LLM 流式调用失败: {e}") from e
+
+    async def generate_with_image(
+        self, prompt: str, image_bytes: bytes, mime: str = "image/png"
+    ) -> dict:
+        """
+        多模态图像理解（OpenAI Compatible vision 格式）
+
+        Args:
+            prompt: 针对图片的提问/指令
+            image_bytes: 图片二进制内容
+            mime: 图片 MIME 类型
+
+        Returns:
+            包含 answer, usage, finish_reason 的字典
+
+        Raises:
+            LLMException: 模型不支持视觉或调用失败（调用方应降级处理）
+        """
+        import base64
+
+        b64 = base64.b64encode(image_bytes).decode("ascii")
+        messages = [{
+            "role": "user",
+            "content": [
+                {"type": "text", "text": prompt},
+                {"type": "image_url",
+                 "image_url": {"url": f"data:{mime};base64,{b64}"}},
+            ],
+        }]
+        try:
+            response = await self._client.chat.completions.create(
+                model=self.vision_model,
+                messages=messages,
+                temperature=self.temperature,
+                max_tokens=self.max_tokens,
+                stream=False,
+            )
+            choice = response.choices[0]
+            return {
+                "answer": choice.message.content or "",
+                "usage": {
+                    "prompt_tokens": response.usage.prompt_tokens if response.usage else 0,
+                    "completion_tokens": response.usage.completion_tokens if response.usage else 0,
+                    "total_tokens": response.usage.total_tokens if response.usage else 0,
+                },
+                "finish_reason": choice.finish_reason,
+            }
+        except Exception as e:
+            raise LLMException(f"视觉模型调用失败: {e}") from e

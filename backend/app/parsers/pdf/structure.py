@@ -294,10 +294,10 @@ def build_structure(
 
             blk = obj
             if blk.kind != "text":
-                # 图像块 → figure 占位节点（视觉理解为 P3，这里保留位置与页码）
+                # 图像块 → figure 节点（保留 bbox 供 P3 视觉理解渲染分析）
                 structure.nodes.append(StructNode(
                     kind="figure", text="", page_start=p.page_no, page_end=p.page_no,
-                    section_path=list(section_path),
+                    section_path=list(section_path), figure_bbox=blk.bbox,
                 ))
                 continue
 

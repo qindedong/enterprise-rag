@@ -176,6 +176,20 @@ async def process_document(
 
                 try:
                     structure = parser.parse_structured(file_path)
+                    # P3: 视觉理解 — 对 figure 节点调多模态模型生成描述，
+                    # 失败降级保留占位，不阻塞入库
+                    if getattr(settings, "VISION_ENABLED", True):
+                        try:
+                            from app.infrastructure.llm_client import LLMClient
+                            from app.parsers.pdf.vision_extractor import (
+                                analyze_figures,
+                            )
+
+                            await analyze_figures(
+                                LLMClient(), file_path, structure
+                            )
+                        except Exception as ve:
+                            logger.warning(f"视觉理解失败，图表保留占位: {ve}")
                     structured_chunks = SemanticChunker(
                         chunk_size=settings.CHUNK_SIZE,
                         chunk_overlap=settings.CHUNK_OVERLAP,

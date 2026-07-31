@@ -10,6 +10,20 @@
 ## [Unreleased]
 
 ### Added
+- **PDF 四层架构 P3**（视觉理解 + Agent 工具层 + 分层评测）：
+  - `parsers/pdf/vision_extractor.py`：figure 节点按 bbox 区域渲染（200 DPI）
+    → 多模态模型生成 ≤300 字图表描述，回填 figure_summary chunk；
+    `VISION_ENABLED` / `VISION_MODEL` 开关，视觉 API 不可用降级保留占位
+  - `LLMClient.generate_with_image`：OpenAI Compatible vision 格式图像理解
+  - `agent/tools.py`：L4 五件套 — search_pdf（hybrid 检索 + kind/section/pages
+    过滤）、read_page、extract_table（行列 JSON）、analyze_chart、quote_source
+  - `agent/planner.py`：规则意图路由（simple/quote/chart/table/compare），
+    简单问题直通现有管线零延迟；工具链未命中或异常自动回退常规问答；
+    `AGENT_MAX_STEPS` 步数上限兜底
+  - 新端点 `POST /knowledge-bases/{kb_id}/agent/chat`
+  - `eval/run_layered_eval.py`：分层评测（L1 分类准确率+OCR CER、
+    L2 标题 F1+表格结构正确率、L3 页码精准率+图表检出、L4 路由准确率），
+    样本自动生成、全程离线
 - **PDF 四层架构 P2**（OCR 路径 + Contextual Retrieval）：
   - `parsers/pdf/ocr_extractor.py`：扫描页 300 DPI 渲染 → RapidOCR 识别，
     输出与原生同构的 Block（bbox 坐标还原），平均置信度 <70% 告警；

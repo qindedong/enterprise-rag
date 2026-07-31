@@ -121,6 +121,7 @@ class StructNode:
     section_path: list[str] = field(default_factory=list)  # 章节路径快照
     clause_no: str | None = None  # 合同条款号，如 "第12条"
     table: StructuredTable | None = None  # kind="table" 时的结构化表格
+    figure_bbox: tuple[float, float, float, float] | None = None  # kind="figure" 时的图像区域
 
 
 @dataclass

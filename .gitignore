@@ -4,6 +4,8 @@
 raw-data/
 test-data/
 c-drive-data/
+# 分层评测样本（eval/run_layered_eval.py 运行时自动生成）
+backend/eval/samples/
 
 # ============================================
 # 密钥 & 环境变量

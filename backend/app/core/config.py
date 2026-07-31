@@ -72,6 +72,11 @@ class Settings(BaseSettings):
     RERANK_TOP_K: int = 8
     # Contextual Retrieval：入库时为每个 chunk 生成 LLM 语义上下文前缀
     CONTEXTUAL_RETRIEVAL_ENABLED: bool = True
+    # 视觉理解：对 PDF 图表区域调多模态模型生成描述（失败降级保留占位）
+    VISION_ENABLED: bool = True
+    VISION_MODEL: str = ""  # 空 = 回退 LLM_MODEL
+    # Agent 工具层：复杂意图多步工具循环的步数上限
+    AGENT_MAX_STEPS: int = 6
 
     # ===== SSO / OIDC 配置 =====
     # 支持任意 OIDC Provider（Keycloak / Authentik / Auth0 / Entra ID 等）

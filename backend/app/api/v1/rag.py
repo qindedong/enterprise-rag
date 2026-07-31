@@ -239,7 +239,27 @@ async def rag_chat_sync(
     return APIResponse(data=result)
 
 
-# ===== 独立检索（只检索不生成，供评估/调试使用） =====
+@router.post("/knowledge-bases/{kb_id}/agent/chat", summary="Agent 问答（工具编排，非流式）")
+async def rag_agent_chat(
+    kb_id: str,
+    req: ChatRequest,
+    _kb=Depends(require_kb_role(MemberRole.VIEWER)),
+) -> APIResponse[dict]:
+    """L4 Agent 问答 — 按意图路由到 PDF 工具链（表格/图表/溯源/对比），
+    简单问题直通现有检索管线"""
+    from app.agent import PDFAgent, PDFTools
+    from app.core.config import get_settings
+    from app.core.database import async_session
+
+    service = _get_rag_service()
+    async with async_session() as session:
+        tools = PDFTools(session, service.retrieval, service.llm_client)
+        agent = PDFAgent(
+            service, tools,
+            max_steps=getattr(get_settings(), "AGENT_MAX_STEPS", 6),
+        )
+        result = await agent.answer(req.question, UUID(kb_id))
+    return APIResponse(data=result)
 
 
 @router.post("/knowledge-bases/{kb_id}/search", summary="独立检索（不生成答案）")
