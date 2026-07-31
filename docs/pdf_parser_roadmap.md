@@ -1,5 +1,7 @@
 # PDF 复杂场景处理方案
 
+> **⚠️ 本文档已被 [pdf_pipeline_architecture.md](./pdf_pipeline_architecture.md) 取代**（四层架构：解析层 / 结构还原层 / 切片与索引层 / Agent 工具层），以下内容仅作历史参考。
+
 ## 当前能力与差距
 
 当前 `pdf_parser.py` 仅用 `page.get_text()` 做纯文本提取，不感知页面布局。面对复杂 PDF 时存在以下问题：
