@@ -232,3 +232,21 @@ class TestPDFAgent:
         r = await agent.answer("这句话出自哪里？", uuid4())
         # quote 路径 3 个 chunk × quote_source 必然超 2 步 → 兜底回退
         assert "fallback" in r["intent"]
+
+    @pytest.mark.asyncio
+    async def test_compare_searches_all_parties(self):
+        """对比问题必须对每个被比较对象分别检索（回归：曾丢失首个对象）"""
+        queries = []
+
+        class RecordingPipeline:
+            async def retrieve(self, question, kb_id, **kw):
+                queries.append(question)
+                return []
+
+        tools = PDFTools(None, RecordingPipeline())
+        agent = PDFAgent(FakeRAGService(), tools)
+        await agent.answer("对比新凤鸣和赛轮轮胎两份公告披露的核心事项", uuid4())
+        assert any("新凤鸣" in q for q in queries)
+        assert any("赛轮轮胎" in q for q in queries)
+        # 疑问尾巴不应成为独立检索词
+        assert not any(q.strip() in ("有什么区别", "的区别") for q in queries)

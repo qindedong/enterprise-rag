@@ -196,8 +196,15 @@ class PDFAgent:
 
     # ---- 对比：多轮 search_pdf + 综合 ---------------------------------
     async def _handle_compare(self, question, kb_id, tools_used):
-        parts = [p.strip("？?。 ") for p in _COMPARE_SPLIT.split(question) if p.strip("？?。 ")]
-        sub_queries = parts[1:4] if len(parts) > 1 else [question]
+        # 切出被比较的各方：按对比词/连词切分后过滤疑问尾巴
+        # （如"A和B有什么区别"中的"有什么区别"）
+        _TAIL = re.compile(r"^(有什么|有什么样|的|各有什么)?(区别|差异|不同|差别|优缺点|核心事项|主要内容|异同)[呢吗]?$")
+        parts = []
+        for p in _COMPARE_SPLIT.split(question):
+            p = p.strip("？?。 ")
+            if p and not _TAIL.match(p):
+                parts.append(p)
+        sub_queries = parts[:3] if len(parts) > 1 else [question]
         contexts, citations = [], []
         for q in sub_queries:
             self._step(tools_used, "search_pdf")
