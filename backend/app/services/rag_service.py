@@ -76,14 +76,24 @@ class RAGService:
                 "processing_time_ms": (time.time() - start) * 1000,
             }
 
-        # 组装 Context（编号 + 文档名 + 内容）
+        # 组装 Context（编号 + 文档名 + 页码章节 + 内容）
         context_parts = []
         citations = []
         for i, doc in enumerate(docs):
             idx = i + 1
             title = doc.get("document_title", doc.get("title", "未知文档"))
             content = doc.get("content", "")
-            context_parts.append(f"[{idx}] {title}\n{content}")
+            page_start = doc.get("page_start")
+            section_path = doc.get("section_path") or ""
+
+            # Context 标注来源位置，帮助模型在回答中说明出处
+            location = ""
+            if page_start:
+                location = f"（第 {page_start} 页"
+                if section_path:
+                    location += f"，{section_path}"
+                location += "）"
+            context_parts.append(f"[{idx}] {title}{location}\n{content}")
 
             citations.append(
                 {
@@ -93,6 +103,11 @@ class RAGService:
                     "content_snippet": content[:200] if content else "",
                     "relevance_score": doc.get("score", 0),
                     **({"kb_id": doc["kb_id"]} if doc.get("kb_id") else {}),
+                    **({"page_start": page_start} if page_start else {}),
+                    **({"page_end": doc["page_end"]} if doc.get("page_end") else {}),
+                    **({"section_path": section_path} if section_path else {}),
+                    **({"kind": doc["kind"]} if doc.get("kind") else {}),
+                    **({"clause_no": doc["clause_no"]} if doc.get("clause_no") else {}),
                 }
             )
 

@@ -7,6 +7,23 @@
 
 ---
 
+## [Unreleased]
+
+### Added
+- **PDF 四层架构 P0**（`docs/pdf_pipeline_architecture.md`）：
+  - L1 解析层：`parsers/pdf/classifier.py` 逐页分类（原生/扫描/图文混排），
+    `native_extractor.py` 块级抽取（bbox 坐标 + 图像区域感知）
+  - L2 结构还原：`structure.py` 页眉页脚过滤（跨页同位置重复剔除）、
+    多栏重组、书签目录 + 启发式标题层级、合同条款号归一化（"第十二条"→"第12条"）
+  - L3 语义切片：`rag/semantic_chunker.py` 按章节路径分组切片（不跨标题，
+    段落边界二次切，章节前缀注入），chunk 携带页码/章节路径/类型/条款号
+  - 入库：`document_chunks.page_number/section_title/metadata` 全面启用，
+    Qdrant payload 扩展 page_start/page_end/section_path/kind/clause_no
+- **引用溯源升级**：RAG 引用携带页码 + 章节路径（向量与 BM25 双路径对齐），
+  LLM context 注入来源位置标注
+
+---
+
 ## [2.1.0] — 2026-07-31
 
 Sprint 8 收尾版本。全链路联调验证通过，性能优化与质量检查落地。

@@ -69,6 +69,14 @@ class TestBM25Retriever:
             "chunk_id": "c1",
             "content": "年假 5 天",
             "page_number": 2,
+            "section_title": "5.2 年假",
+            "metadata": {
+                "page_start": 2,
+                "page_end": 3,
+                "section_path": ["第五章 考勤", "5.2 年假"],
+                "kind": "paragraph",
+                "clause_no": None,
+            },
             "document_title": "考勤制度",
             "score": 0.42,
         }
@@ -89,6 +97,11 @@ class TestBM25Retriever:
         assert r["chunk_id"] == "c1"
         assert r["document_title"] == "考勤制度"
         assert r["score"] == pytest.approx(0.42)
+        # 结构 metadata 透传（与向量检索字段对齐）
+        assert r["page_start"] == 2
+        assert r["page_end"] == 3
+        assert r["section_path"] == "第五章 考勤 / 5.2 年假"
+        assert r["kind"] == "paragraph"
         # SQL 参数：jieba 分词结果应以 OR 连接传入
         args = session.execute.call_args[0]
         assert " | " in args[1]["or_query"]  # 分词后以 OR 连接

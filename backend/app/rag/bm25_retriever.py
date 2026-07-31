@@ -66,6 +66,8 @@ class BM25Retriever:
                 c.id::text AS chunk_id,
                 c.content,
                 c.page_number,
+                c.section_title,
+                c.metadata,
                 d.title AS document_title,
                 ts_rank_cd(c.search_vector, to_tsquery('simple', :or_query), 32) AS score
             FROM document_chunks c
@@ -83,17 +85,27 @@ class BM25Retriever:
             )
             rows = result.mappings().all()
 
-        candidates = [
-            {
-                "id": row["chunk_id"],
-                "chunk_id": row["chunk_id"],
-                "document_title": row["document_title"],
-                "content": row["content"],
-                "page_number": row["page_number"],
-                "score": float(row["score"]),
-            }
-            for row in rows
-        ]
+        candidates = []
+        for row in rows:
+            meta = row["metadata"] or {}
+            section_path = meta.get("section_path") or (
+                [row["section_title"]] if row["section_title"] else []
+            )
+            candidates.append(
+                {
+                    "id": row["chunk_id"],
+                    "chunk_id": row["chunk_id"],
+                    "document_title": row["document_title"],
+                    "content": row["content"],
+                    "page_number": row["page_number"],
+                    "page_start": meta.get("page_start", row["page_number"]),
+                    "page_end": meta.get("page_end", row["page_number"]),
+                    "section_path": " / ".join(section_path),
+                    "kind": meta.get("kind"),
+                    "clause_no": meta.get("clause_no"),
+                    "score": float(row["score"]),
+                }
+            )
 
         elapsed = (time.time() - start) * 1000
         logger.info(f"BM25 检索完成: {len(candidates)} 条, 耗时 {elapsed:.0f}ms")

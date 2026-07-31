@@ -155,7 +155,7 @@ async def process_document(
     await _update_doc_status(redis, doc_id, "processing")
 
     try:
-        # Step 1: 解析
+        # Step 1: 解析（PDF 走 L1/L2 结构化管线，其余格式保持纯文本）
         logger.info(f"📖 解析文档: {doc_id}")
         from app.parsers.docx_parser import DOCX_MIME
 
@@ -167,30 +167,52 @@ async def process_document(
             "txt": "text/plain",
         }
         mime = ext_to_mime.get(file_ext, f"text/{file_ext}")
+        structured_chunks = None
+        raw_text = None
         try:
             parser = ParserRegistry.get_parser(mime)
-            raw_text = parser.parse(file_path)
+            if mime == "application/pdf" and hasattr(parser, "parse_structured"):
+                from app.rag.semantic_chunker import SemanticChunker
+
+                try:
+                    structure = parser.parse_structured(file_path)
+                    structured_chunks = SemanticChunker(
+                        chunk_size=settings.CHUNK_SIZE,
+                        chunk_overlap=settings.CHUNK_OVERLAP,
+                    ).split(structure) or None
+                    if not structured_chunks:
+                        raw_text = structure.plain_text()
+                except Exception as e:
+                    logger.warning(f"PDF 结构化解析失败，回退纯文本抽取: {e}")
+                    structured_chunks = None
+            if not structured_chunks and raw_text is None:
+                raw_text = parser.parse(file_path)
         except Exception:
             from app.parsers.text_parser import TextParser
 
+            structured_chunks = None
             raw_text = TextParser().parse(file_path)
 
-        if not raw_text or not raw_text.strip():
-            await _update_doc_status(redis, doc_id, "failed", error="未能提取到文字内容")
-            return
-
-        # Step 2: 分块
-        splitter = TextSplitter(
-            chunk_size=settings.CHUNK_SIZE,
-            chunk_overlap=settings.CHUNK_OVERLAP,
-        )
-        split_result = splitter.split(raw_text)
-        if split_result.total_chunks == 0:
-            await _update_doc_status(redis, doc_id, "failed", error="分块结果为空")
-            return
+        # Step 2: 分块（结构化管线已产出 chunk，纯文本走递归切分器）
+        if structured_chunks:
+            chunk_texts = [c.text for c in structured_chunks]
+            logger.info(f"语义切片: {len(chunk_texts)} 个结构化 chunk")
+        else:
+            if not raw_text or not raw_text.strip():
+                await _update_doc_status(redis, doc_id, "failed", error="未能提取到文字内容")
+                return
+            splitter = TextSplitter(
+                chunk_size=settings.CHUNK_SIZE,
+                chunk_overlap=settings.CHUNK_OVERLAP,
+            )
+            split_result = splitter.split(raw_text)
+            if split_result.total_chunks == 0:
+                await _update_doc_status(redis, doc_id, "failed", error="分块结果为空")
+                return
+            chunk_texts = split_result.chunks
 
         # Step 3: 向量化
-        embeddings = await embedding_client.embed_batch(split_result.chunks)
+        embeddings = await embedding_client.embed_batch(chunk_texts)
 
         # Step 4: 落库 document_chunks（jieba 预分词，供 BM25 全文检索）
         import jieba
@@ -200,13 +222,27 @@ async def process_document(
 
         chunk_ids: list[str] = []
         async with async_session() as session:
-            for i, chunk_text in enumerate(split_result.chunks):
+            for i, chunk_text in enumerate(chunk_texts):
+                meta = structured_chunks[i] if structured_chunks else None
                 chunk = DocumentChunk(
                     document_id=doc_id,
                     kb_id=kb_id,
                     chunk_index=i,
                     content=chunk_text,
                     content_segmented=" ".join(jieba.cut(chunk_text)),
+                    page_number=meta.page_start if meta else None,
+                    section_title=meta.section_title if meta else None,
+                    metadata_=(
+                        {
+                            "page_start": meta.page_start,
+                            "page_end": meta.page_end,
+                            "section_path": meta.section_path,
+                            "kind": meta.kind,
+                            "clause_no": meta.clause_no,
+                        }
+                        if meta
+                        else {}
+                    ),
                 )
                 session.add(chunk)
                 await session.flush()  # 生成 chunk.id
@@ -217,33 +253,44 @@ async def process_document(
         # Step 5: 写入 Qdrant（点 ID 与 document_chunks.id 一致，便于混合检索对齐）
         points = []
         for i, (chunk_text, embedding) in enumerate(
-            zip(split_result.chunks, embeddings, strict=False)
+            zip(chunk_texts, embeddings, strict=False)
         ):
+            payload = {
+                "kb_id": str(kb_id),
+                "document_id": str(doc_id),
+                "document_title": doc_title,
+                "chunk_id": chunk_ids[i],
+                "chunk_index": i,
+                "content": chunk_text[:2000],
+                "created_at": datetime.now(UTC).isoformat(),
+            }
+            if structured_chunks:
+                m = structured_chunks[i]
+                payload.update({
+                    "page_start": m.page_start,
+                    "page_end": m.page_end,
+                    "section_path": " / ".join(m.section_path),
+                    "kind": m.kind,
+                    "clause_no": m.clause_no,
+                })
             point = PointStruct(
                 id=chunk_ids[i],
                 vector=embedding,
-                payload={
-                    "kb_id": str(kb_id),
-                    "document_id": str(doc_id),
-                    "document_title": doc_title,
-                    "chunk_id": chunk_ids[i],
-                    "chunk_index": i,
-                    "content": chunk_text[:2000],
-                    "created_at": datetime.now(UTC).isoformat(),
-                },
+                payload=payload,
             )
             points.append(point)
 
         qdrant_store.upsert(points)
 
         # Step 6: 标记完成
+        total_chunks = len(chunk_texts)
         await _update_doc_status(
             redis,
             doc_id,
             "completed",
-            chunk_count=split_result.total_chunks,
+            chunk_count=total_chunks,
         )
-        logger.info(f"✅ 文档处理完成: {doc_id}, {split_result.total_chunks} 个分块")
+        logger.info(f"✅ 文档处理完成: {doc_id}, {total_chunks} 个分块")
 
     except Exception as e:
         logger.error(f"文档处理失败: {doc_id}: {e}", exc_info=True)
