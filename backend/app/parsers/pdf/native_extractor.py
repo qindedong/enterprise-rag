@@ -81,8 +81,14 @@ def extract_page(page, profile: PageProfile) -> PageContent:
 
 
 def extract_document(doc, profiles: list[PageProfile]) -> list[PageContent]:
-    """对整个 PDF 逐页块级抽取"""
+    """对整个 PDF 逐页抽取：原生/混排页走块级抽取，扫描页走 OCR"""
+    from app.parsers.pdf.ocr_extractor import ocr_page
+
     pages: list[PageContent] = []
     for i, page in enumerate(doc):
-        pages.append(extract_page(page, profiles[i]))
+        profile = profiles[i]
+        if profile.page_type == PageType.SCANNED:
+            pages.append(ocr_page(page, profile))
+        else:
+            pages.append(extract_page(page, profile))
     return pages

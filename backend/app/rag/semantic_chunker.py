@@ -31,6 +31,7 @@ class StructuredChunk:
     kind: str = "paragraph"          # paragraph | clause | table | figure_summary
     clause_no: str | None = None
     table_id: str | None = None
+    context_prefix: str | None = None  # Contextual Retrieval 注入的语义说明（P2）
     token_count: int = 0
 
     @property

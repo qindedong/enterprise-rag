@@ -229,7 +229,7 @@ Qdrant payload 同步扩展（当前只有 7 个字段），`page_start` / `sect
 |------|------|----------|------|
 | **P0** ✅（2026-07-31 完成，258 单测全过）| L1 块级抽取 + 页面分类器；L2 页眉页脚过滤 + 多栏重组 + TOC 提取；L3 结构 metadata 入库（page/section/kind） | 无新依赖 | 合同 PDF 切片带"第几章第几条第几页" |
 | **P1** ✅（2026-07-31 完成，267 单测全过）| L2 表格结构化（find_tables）+ 条款边界；L3 语义切片器取代硬切；引用带页码 | 无新依赖 | 财报表格 chunk 行列完整，引用可跳页 |
-| **P2** | L1 OCR 路径；L3 Contextual Retrieval 上下文生成 | +PaddleOCR/RapidOCR（镜像 +~500MB） | 扫描件可检索，OCR CER 达标 |
+| **P2** ✅（2026-07-31 完成，272 单测全过）| L1 OCR 路径（RapidOCR，扫描页 300 DPI 渲染识别，输出与原生同构 Block）；L3 Contextual Retrieval 上下文注入（并发 LLM 出处说明，`CONTEXTUAL_RETRIEVAL_ENABLED` 开关） | +RapidOCR（ONNX，模型随包内置） | 扫描件可检索可问答，引用带页码+章节+条款号 |
 | **P3** | L1 视觉理解路径；L4 Agent 工具层全套；分层评测集 | +多模态模型 API | 图表问题走 analyze_chart，复杂对比多步规划 |
 
 **关键设计决策**：

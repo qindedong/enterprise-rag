@@ -10,6 +10,15 @@
 ## [Unreleased]
 
 ### Added
+- **PDF 四层架构 P2**（OCR 路径 + Contextual Retrieval）：
+  - `parsers/pdf/ocr_extractor.py`：扫描页 300 DPI 渲染 → RapidOCR 识别，
+    输出与原生同构的 Block（bbox 坐标还原），平均置信度 <70% 告警；
+    引擎不可用降级为空页不崩溃；OCR 无文字时保留图像块供 P3 视觉理解
+  - `rag/contextual.py`：`Contextualizer` 并发（Semaphore=4）为每个 chunk
+    生成 ≤60 字出处说明并注入文首（`[说明]\n正文`），LLM 失败自动保持原样；
+    `CONTEXTUAL_RETRIEVAL_ENABLED` 开关控制
+  - 端到端验证：扫描件合同 OCR 置信度 100%，7 个 chunk 全部注入上下文，
+    引用携带页码 + 章节 + 条款号
 - **PDF 四层架构 P1**（表格结构化 + 条款边界切片）：
   - `parsers/pdf/tables.py`：`find_tables` 检测线框表格 → 表头 + 行列结构化，
     表注关联（"表 2-1 xxx"），表内文本块归属表格不再进入段落流

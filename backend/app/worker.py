@@ -195,6 +195,18 @@ async def process_document(
 
         # Step 2: 分块（结构化管线已产出 chunk，纯文本走递归切分器）
         if structured_chunks:
+            # P2: Contextual Retrieval — LLM 生成语义上下文前缀，
+            # 失败降级保留机械章节前缀，不阻塞入库
+            if getattr(settings, "CONTEXTUAL_RETRIEVAL_ENABLED", True):
+                try:
+                    from app.infrastructure.llm_client import LLMClient
+                    from app.rag.contextual import Contextualizer
+
+                    await Contextualizer(LLMClient()).add_context(
+                        structured_chunks, doc_title
+                    )
+                except Exception as e:
+                    logger.warning(f"上下文注入失败，降级为章节前缀: {e}")
             chunk_texts = [c.text for c in structured_chunks]
             logger.info(f"语义切片: {len(chunk_texts)} 个结构化 chunk")
         else:
@@ -240,6 +252,7 @@ async def process_document(
                             "kind": meta.kind,
                             "clause_no": meta.clause_no,
                             "table_id": meta.table_id,
+                            "context_prefix": meta.context_prefix,
                         }
                         if meta
                         else {}

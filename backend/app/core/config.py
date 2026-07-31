@@ -70,6 +70,8 @@ class Settings(BaseSettings):
     CHUNK_OVERLAP: int = 100
     RETRIEVAL_TOP_K: int = 20
     RERANK_TOP_K: int = 8
+    # Contextual Retrieval：入库时为每个 chunk 生成 LLM 语义上下文前缀
+    CONTEXTUAL_RETRIEVAL_ENABLED: bool = True
 
     # ===== SSO / OIDC 配置 =====
     # 支持任意 OIDC Provider（Keycloak / Authentik / Auth0 / Entra ID 等）
