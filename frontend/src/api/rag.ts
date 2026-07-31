@@ -68,6 +68,8 @@ export async function chatStream(
     onStatus?: (status: { phase: string; count?: number }) => void
     onToken: (token: string) => void
     onCitations: (citations: unknown[]) => void
+    onMetadata?: (meta: { conversation_id: string }) => void
+    onSaved?: (saved: { conversation_id: string; message_id: string }) => void
     onDone: (meta: Record<string, unknown>) => void
     onError: (err: { code: number; message: string }) => void
   },
@@ -140,6 +142,12 @@ export async function chatStream(
                 break
               case 'citation':
                 callbacks.onCitations(data.citations || [])
+                break
+              case 'metadata':
+                callbacks.onMetadata?.(data)
+                break
+              case 'saved':
+                callbacks.onSaved?.(data)
                 break
               case 'done':
                 callbacks.onDone(data)

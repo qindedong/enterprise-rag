@@ -137,16 +137,22 @@ async def _load_history(db, conv_id: UUID | None) -> list[dict] | None:
     return [{"role": m.role.value if m.role else "user", "content": m.content} for m in messages]
 
 
-async def _save_turn(db, conv_id: UUID | None, question: str, answer: str, citations: list) -> None:
-    """保存一轮问答到对话历史（best-effort，失败不影响回答）"""
+async def _save_turn(db, conv_id: UUID | None, question: str, answer: str, citations: list) -> str | None:
+    """保存一轮问答到对话历史（best-effort，失败不影响回答）
+
+    Returns:
+        助手消息 ID（未保存时为 None），供反馈点赞/点踩挂载
+    """
     if conv_id is None or not answer:
-        return
+        return None
     try:
         conv_service = ConversationService(ConversationRepository(db), MessageRepository(db))
         await conv_service.add_message(conv_id, "user", question)
-        await conv_service.add_message(conv_id, "assistant", answer, citations=citations)
+        assistant = await conv_service.add_message(conv_id, "assistant", answer, citations=citations)
+        return assistant.get("id")
     except Exception as e:
         logger.warning(f"对话消息保存失败（不影响回答）: {e}")
+        return None
 
 
 @router.post("/knowledge-bases/{kb_id}/chat", summary="RAG 问答（流式）")
@@ -154,6 +160,8 @@ async def rag_chat_stream(
     kb_id: str,
     req: ChatRequest,
     _kb=Depends(require_kb_role(MemberRole.VIEWER)),
+    current_user: User = Depends(get_current_user),
+    conv_service: ConversationService = Depends(_get_conv_service),
     db=Depends(get_db),
 ):
     """
@@ -168,14 +176,21 @@ async def rag_chat_stream(
     """
     conv_id = UUID(req.conversation_id) if req.conversation_id else None
     service = _get_rag_service()
+
+    # 未指定对话时自动创建（否则问答不落库，反馈与数据看板都没有数据源）
+    if conv_id is None:
+        conv = await conv_service.create_or_get(UUID(kb_id), current_user.id, req.question)
+        conv_id = UUID(conv["id"])
+
     history = await _load_history(db, conv_id)
+    # 提交对话创建（get_db 依赖结束时才自动 commit，这里先关连接必须显式提交）
+    await db.commit()
     # 先释放数据库连接（检索+LLM 耗时可达数十秒，不占用连接池）
     await db.close()
 
     async def event_stream():
-        # 发送对话 ID（供前端后续多轮会话使用）
-        if conv_id:
-            yield f"event: metadata\ndata: {json.dumps({'conversation_id': str(conv_id)})}\n\n"
+        # 发送对话 ID（供前端后续多轮会话与消息反馈使用）
+        yield f"event: metadata\ndata: {json.dumps({'conversation_id': str(conv_id)})}\n\n"
 
         # 累积答案与引用，流结束后落库
         full_answer = ""
@@ -195,13 +210,14 @@ async def rag_chat_stream(
                     pass
             yield event
 
-        # 多轮对话：保存本轮问答（打开新 session）
-        if conv_id:
-            from app.core.database import async_session
+        # 保存本轮问答（打开新 session），并把真实消息 ID 发给前端
+        from app.core.database import async_session
 
-            async with async_session() as save_db:
-                await _save_turn(save_db, conv_id, req.question, full_answer, citations)
-                await save_db.commit()
+        async with async_session() as save_db:
+            message_id = await _save_turn(save_db, conv_id, req.question, full_answer, citations)
+            await save_db.commit()
+        if message_id:
+            yield f"event: saved\ndata: {json.dumps({'conversation_id': str(conv_id), 'message_id': message_id})}\n\n"
 
     return StreamingResponse(
         event_stream(),
@@ -219,22 +235,32 @@ async def rag_chat_sync(
     kb_id: str,
     req: ChatRequest,
     _kb=Depends(require_kb_role(MemberRole.VIEWER)),
+    current_user: User = Depends(get_current_user),
+    conv_service: ConversationService = Depends(_get_conv_service),
     db=Depends(get_db),
 ) -> APIResponse[dict]:
     """RAG 问答 — 非流式，返回完整 JSON 响应"""
     conv_id = UUID(req.conversation_id) if req.conversation_id else None
     service = _get_rag_service()
+
+    # 未指定对话时自动创建（否则问答不落库，反馈与数据看板都没有数据源）
+    if conv_id is None:
+        conv = await conv_service.create_or_get(UUID(kb_id), current_user.id, req.question)
+        conv_id = UUID(conv["id"])
+
     history = await _load_history(db, conv_id)
+    await db.commit()
     # 先释放数据库连接（检索+LLM 耗时可达数十秒，不占用连接池）
     await db.close()
     result = await service.ask(req.question, UUID(kb_id), conv_id, history)
 
-    if conv_id:
-        # 保存对话时重新打开一个新 session
-        from app.core.database import async_session
-        async with async_session() as save_db:
-            await _save_turn(save_db, conv_id, req.question, result["answer"], result["citations"])
-            await save_db.commit()
+    # 保存对话时重新打开一个新 session
+    from app.core.database import async_session
+    async with async_session() as save_db:
+        message_id = await _save_turn(save_db, conv_id, req.question, result["answer"], result["citations"])
+        await save_db.commit()
+    result["conversation_id"] = str(conv_id)
+    result["message_id"] = message_id
 
     return APIResponse(data=result)
 

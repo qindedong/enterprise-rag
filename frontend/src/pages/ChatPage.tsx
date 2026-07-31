@@ -202,11 +202,20 @@ export function ChatPage() {
     }
 
     // 流式接收
+    // 后端会在首轮自动创建对话并通过 metadata 事件下发 conversation_id，
+    // 流结束后用真实消息（真实 ID + 反馈状态）替换占位消息
+    let streamConvId = activeConvId || undefined
     await chatStream(
       selectedKbId,
       question,
       {
         onStatus: (s) => setStatus(s),
+        onMetadata: (meta) => {
+          if (meta.conversation_id && meta.conversation_id !== streamConvId) {
+            streamConvId = meta.conversation_id
+            setActiveConvId(meta.conversation_id)
+          }
+        },
         onToken: (token) => {
           setMessages((prev) =>
             prev.map((m) =>
@@ -233,8 +242,8 @@ export function ChatPage() {
           setStatus(null)
           loadConversations()
           // 重新拉取消息，把流式占位消息换成后端持久化版本（真实 ID + 反馈状态）
-          if (activeConvId) {
-            loadConvMessages(activeConvId)
+          if (streamConvId) {
+            loadConvMessages(streamConvId)
           }
         },
         onError: (err) => {
