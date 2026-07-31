@@ -26,7 +26,8 @@ logger = get_logger(__name__)
 # 意图规则：按优先级从上到下匹配，先中先得
 INTENT_RULES: list[tuple[str, tuple[str, ...]]] = [
     ("quote", ("出自", "来源", "引用", "哪里说", "原文", "依据是什么")),
-    ("chart", ("图表", "趋势", "占比", "饼图", "柱状", "折线", "流程图", "走势图")),
+    ("chart", ("图表", "趋势", "占比", "饼图", "柱状", "折线", "流程图", "走势图",
+               "走势", "对比图", "分布图")),
     ("table", ("表格", "明细", "一览", "各项费用", "各项数据")),
     ("compare", ("对比", "比较", "区别", "差异", "哪个更")),
 ]
@@ -118,6 +119,16 @@ class PDFAgent:
         return "\n".join(lines), citations
 
     # ---- 图表：analyze_chart -----------------------------------------
+    @staticmethod
+    def _figure_desc_from_chunk(content: str) -> str:
+        """从 figure_summary chunk 提取入库时的视觉描述
+        （去掉 [上下文说明] 和 [图片/图表：...] 两行前缀）"""
+        lines = [
+            ln.strip() for ln in (content or "").splitlines()
+            if ln.strip() and not ln.strip().startswith("[")
+        ]
+        return "\n".join(lines)
+
     async def _handle_chart(self, question, kb_id, tools_used):
         hits = await self.tools.search_pdf(
             question, kb_id, filters={"kind": "figure_summary"}, limit=3
@@ -125,6 +136,20 @@ class PDFAgent:
         self._step(tools_used, "search_pdf")
         analyses = []
         for c in hits["chunks"]:
+            # 优先复用入库时的视觉描述：它和图像块一一对应，
+            # 现场 analyze_chart 按页码+序号取图，一页多图时可能拿错
+            desc = self._figure_desc_from_chunk(c.get("content") or "")
+            if desc:
+                analyses.append({
+                    "doc_id": c.get("document_id"),
+                    "document_title": c.get("document_title"),
+                    "page_no": c.get("page_start"),
+                    "section_path": (c.get("section_path") or "").split(" / "),
+                    "analysis": desc,
+                    "chunk_content": c.get("content") or "",
+                })
+                continue
+            # 占位 chunk（入库时视觉未启用/失败）才现场分析兜底
             if not c.get("document_id") or not c.get("page_start"):
                 continue
             self._step(tools_used, "analyze_chart")
