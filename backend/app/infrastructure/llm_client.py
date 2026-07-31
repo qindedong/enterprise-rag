@@ -33,6 +33,15 @@ class LLMClient:
             timeout=120.0,
             max_retries=3,
         )
+        # 视觉模型可走独立厂商端点（如主模型用 DeepSeek、视觉用智谱 GLM-4V）
+        vision_base = getattr(settings, "VISION_BASE_URL", "") or settings.LLM_BASE_URL
+        vision_key = getattr(settings, "VISION_API_KEY", "") or settings.LLM_API_KEY
+        self._vision_client = AsyncOpenAI(
+            api_key=vision_key,
+            base_url=vision_base,
+            timeout=120.0,
+            max_retries=3,
+        )
 
     async def generate(self, messages: list[dict]) -> dict:
         """
@@ -118,7 +127,7 @@ class LLMClient:
             ],
         }]
         try:
-            response = await self._client.chat.completions.create(
+            response = await self._vision_client.chat.completions.create(
                 model=self.vision_model,
                 messages=messages,
                 temperature=self.temperature,

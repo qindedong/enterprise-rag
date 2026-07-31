@@ -130,13 +130,28 @@ class PDFAgent:
             self._step(tools_used, "analyze_chart")
             r = await self.tools.analyze_chart(UUID(c["document_id"]), c["page_start"])
             if r.get("analysis"):
-                analyses.append({**r, "document_title": c.get("document_title")})
+                analyses.append({**r, "document_title": c.get("document_title"),
+                                 "chunk_content": c.get("content") or ""})
         if not analyses:
             return None, []
+        # 补充同文档周边片段（图表 chunk 自身不含正文，
+        # 仅凭视觉描述无法把"四个类别"对应回文档主题）
+        self._step(tools_used, "search_pdf")
+        nearby = await self.tools.search_pdf(question, kb_id, limit=5)
+        nearby_text: dict[str, list[str]] = {}
+        for c in nearby["chunks"]:
+            if c.get("kind") == "figure_summary":
+                continue  # 图表自身已有视觉分析，跳过避免重复
+            nearby_text.setdefault(c.get("document_id"), []).append(
+                (c.get("content") or "")[:250])
         return await self._synthesize(
             question,
-            [f"《{a['document_title']}》第 {a['page_no']} 页图表分析：{a['analysis']}"
+            # 视觉分析 + 同文档周边正文，让综合模型建立图表与主题的关联
+            [f"《{a['document_title']}》第 {a['page_no']} 页图表分析：{a['analysis']}\n"
+             f"同文档相关资料：{'；'.join(nearby_text.get(a.get('doc_id'), [])) or a['chunk_content'][:300]}"
              for a in analyses],
+            instruction="请结合图表分析和文档资料说明图表的含义；"
+                        "资料能支撑的部分明确回答，无法确认的部分如实说明。",
         ), [{
             "chunk_id": None,
             "document_title": a.get("document_title"),

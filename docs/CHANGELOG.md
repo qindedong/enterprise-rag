@@ -13,7 +13,9 @@
 - **PDF 四层架构 P3**（视觉理解 + Agent 工具层 + 分层评测）：
   - `parsers/pdf/vision_extractor.py`：figure 节点按 bbox 区域渲染（200 DPI）
     → 多模态模型生成 ≤300 字图表描述，回填 figure_summary chunk；
-    `VISION_ENABLED` / `VISION_MODEL` 开关，视觉 API 不可用降级保留占位
+    `VISION_ENABLED` / `VISION_MODEL` / `VISION_BASE_URL` / `VISION_API_KEY`
+    支持独立视觉厂商端点（实测智谱免费模型 glm-4.1v-thinking-flash，
+    柱状图趋势识别准确），视觉 API 不可用降级保留占位
   - `LLMClient.generate_with_image`：OpenAI Compatible vision 格式图像理解
   - `agent/tools.py`：L4 五件套 — search_pdf（hybrid 检索 + kind/section/pages
     过滤）、read_page、extract_table（行列 JSON）、analyze_chart、quote_source

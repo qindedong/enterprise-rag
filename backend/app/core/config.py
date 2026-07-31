@@ -75,6 +75,9 @@ class Settings(BaseSettings):
     # 视觉理解：对 PDF 图表区域调多模态模型生成描述（失败降级保留占位）
     VISION_ENABLED: bool = True
     VISION_MODEL: str = ""  # 空 = 回退 LLM_MODEL
+    # 视觉模型独立端点（可与主 LLM 不同厂商，如智谱 GLM-4V 系列）
+    VISION_BASE_URL: str = ""  # 空 = 回退 LLM_BASE_URL
+    VISION_API_KEY: str = ""   # 空 = 回退 LLM_API_KEY
     # Agent 工具层：复杂意图多步工具循环的步数上限
     AGENT_MAX_STEPS: int = 6
 
