@@ -1,55 +1,21 @@
-﻿FROM python:3.13-slim AS builder
+# ============================================================
+# 企业级知识库 RAG — Worker 镜像（基于 rag-api 共享构建）
+# ============================================================
+# Worker 与 API 的 Python 依赖完全相同（worker 依赖是 API 的子集），
+# 因此直接复用 rag-api 镜像的全部层：
+#   - 构建时间从 ~25 分钟降至秒级
+#   - 磁盘占用从 2 × 8.9GB 降至 8.9GB + 一个代码层（层共享）
+#
+# 前置条件（必须先构建 API 镜像）:
+#   docker build -t rag-api:latest -f backend/Dockerfile .
+# 构建命令:
+#   docker build -t rag-worker:latest -f backend/Dockerfile.worker backend/
+# ============================================================
 
-WORKDIR /install
+FROM rag-api:latest
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    libffi-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-COPY pyproject.toml /tmp/pyproject.toml
-
-RUN pip install --no-cache-dir --prefix=/install \
-    fastapi \
-    uvicorn[standard] \
-    sqlalchemy[asyncio] \
-    asyncpg \
-    alembic \
-    pydantic \
-    pydantic-settings \
-    "redis>=5.0.0,<6.0.0" \
-    httpx \
-    python-jose[cryptography] \
-    bcrypt \
-    sentence-transformers \
-    python-multipart \
-    "qdrant-client>=1.9.0,<1.11.0" \
-    openai \
-    tiktoken \
-    pymupdf \
-    langchain-text-splitters \
-    jieba
-
-# ===== 运行时 =====
-FROM python:3.13-slim AS runtime
-
-WORKDIR /app
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libffi8 \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
-
-COPY --from=builder /install /usr/local
-
-RUN useradd --create-home --shell /bin/bash appuser
-RUN mkdir -p /app/uploads /app/logs && chown -R appuser:appuser /app
-
-COPY --chown=appuser:appuser app/ ./app/
-COPY --chown=appuser:appuser migrations/ ./migrations/
-COPY --chown=appuser:appuser alembic.ini ./
-
-USER appuser
+# 健康检查与端口暴露对 Worker 不适用，覆盖掉
+HEALTHCHECK NONE
 
 # Worker 启动命令（从 Redis 队列取任务）
 CMD ["python", "-m", "app.worker"]

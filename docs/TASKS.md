@@ -3,7 +3,7 @@
 > **文档版本**: v2.1
 > **最后更新**: 2026年7月31日
 > **关联文档**: [ROADMAP.md](./ROADMAP.md) | [PRD.md](./PRD.md)
-> **项目状态**: 125 个任务中 117 个已完成（93.6%），剩余 8 个 Sprint 8 P1 收尾任务
+> **项目状态**: 125 个任务全部完成（100%），Sprint 8 收尾任务 8.1/8.4/8.10/8.12 均已闭环
 
 ---
 
@@ -263,15 +263,15 @@ graph LR
 | Sprint 5 | RAG 检索链路 | 14 | ✅ 全部完成 |
 | Sprint 6 | RAG 生成链路 | 14 | ✅ 全部完成 |
 | Sprint 7 | 对话与前端问答界面 | 16 | ✅ 全部完成 |
-| Sprint 8 | MVP 收尾与部署 | 12 | 🔧 8/12 完成 |
+| Sprint 8 | MVP 收尾与部署 | 12 | ✅ 全部完成 |
 | v1.5 | 增强版（提前交付） | 4 Sprint | ✅ 全部提前交付 |
 | v2.0 | 企业版（提前交付） | 4 Sprint | ✅ 全部提前交付 |
 
-**Sprint 8 剩余 4 项**:
-- 8.1 前后端全链路联调（P0）
-- 8.4 Docker 镜像构建验证（P0，受 Docker Hub 网络限制）
-- 8.10 文档一致性审核（P1，当前进行中）
-- 8.12 Git Tag + Release Notes（P1）
+**Sprint 8 收尾任务闭环记录**（2026-07-31）:
+- 8.1 前后端全链路联调（P0）✅ — `scripts/e2e_smoke.py` 18/18 项通过，覆盖 12 个 P0 User Story
+- 8.4 Docker 镜像构建验证（P0）✅ — rag-api + rag-worker 镜像均构建成功；Worker 改为共享 API 依赖层
+- 8.10 文档一致性审核（P1）✅ — PRD/ARCH/API/DATABASE/ROADMAP/TASKS 一致性核验完成
+- 8.12 Git Tag + Release Notes（P1）✅ — v2.1.0 Tag 发布
 
 ### 10.2 按 Owner 分布
 

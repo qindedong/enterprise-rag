@@ -78,7 +78,7 @@ PRD.md（竞争分析、RBAC、异常场景、用户故事）
 | v1.5 增强版 | ✅ 提前交付 | Sprint 9-12（8 周） |
 | v2.0 企业版 | ✅ 提前交付 | Sprint 13-16（8 周） |
 
-> 当前进度：所有版本功能已交付，仅剩 Sprint 8 少量 P1 收尾任务（任务完成度 117/125，93.6%）。详见 [ROADMAP.md](./ROADMAP.md) 与 [TASKS.md](./TASKS.md)。
+> 当前进度：全部版本已交付，125 项任务 100% 完成，v2.1.0 已发布。详见 [ROADMAP.md](./ROADMAP.md) 与 [TASKS.md](./TASKS.md)。
 
 ---
 

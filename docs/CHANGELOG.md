@@ -7,12 +7,19 @@
 
 ---
 
-## [Unreleased]
+## [2.1.0] — 2026-07-31
+
+Sprint 8 收尾版本。全链路联调验证通过，性能优化与质量检查落地。
 
 ### Added
 - **幻觉检测**：`QualityChecker` 质量检查器，含引用越界检测与内容匹配度检查
 - **性能压测**：Locust 压测脚本 (`perf/locustfile.py` + `perf/run_load_test.py`)，
   100 并发 P95=6s < 15s（达标）
+- **全链路冒烟脚本**：`scripts/e2e_smoke.py`，覆盖 PRD 12 个 P0 用户故事
+  共 18 项检查（注册/登录/建库/上传/处理/统计/问答/引用/诚实回答/
+  SSE 流式/多轮对话/删除同步/监控），可重复执行
+- **PDF 复杂场景处理方案**：`docs/pdf_parser_roadmap.md`（目录提取、
+  页眉页脚过滤、多栏排版、表格、OCR 分级落地规划）
 
 ### Changed
 - **检索参数调优**：`RETRIEVAL_TOP_K` 50→20, `RERANK_TOP_K` 10→8，
@@ -23,6 +30,8 @@
 - **Embedding 缓存**：查询向量结果复用，热缓存后单次向量化 < 10ms
 - **本地 Embedding 离线模式**：`local_files_only=True`，避免 HuggingFace 超时
 - **检索评估脚本**：`eval/run_eval.py` 命令行工具，支持三种检索模式
+- **Worker 镜像共享构建**：`Dockerfile.worker` 改为基于 `rag-api:latest`
+  复用全部依赖层，构建时间 ~25min → 秒级，磁盘占用减半（层共享）
 
 ### Fixed
 - Worker 无法处理文档（Docker Hub 网络超时 → 本地离线启动）
