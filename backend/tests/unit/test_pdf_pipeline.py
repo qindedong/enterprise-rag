@@ -12,6 +12,7 @@ from app.parsers.pdf.native_extractor import extract_document
 from app.parsers.pdf.structure import (
     _cn_to_int,
     build_structure,
+    filter_decorative_images,
     filter_header_footer,
     normalize_clause_no,
     reorder_columns,
@@ -309,3 +310,76 @@ class TestStructuredParseEndToEnd:
         _make_scanned_pdf(pdf)
         structure = PDFParser().parse_structured(str(pdf))
         assert structure.page_types[1] == PageType.SCANNED
+
+
+# ---------------------------------------------------------------- L2 装饰图片
+
+@pytest.mark.unit
+class TestDecorativeImageFilter:
+    """跨页同位置重复图片（页眉 Logo / 水印）应被剔除，不生成 figure 节点"""
+
+    def _page(self, page_no, image_bboxes):
+        from app.parsers.pdf.models import Block
+        p = PageContent(page_no=page_no, page_type=PageType.NATIVE, page_height=800)
+        p.blocks = [
+            Block(kind="image", bbox=b, text="", page_no=page_no) for b in image_bboxes
+        ] + [Block(kind="text", bbox=(50, 400, 300, 420),
+                   text=f"第 {page_no} 页正文", page_no=page_no)]
+        return p
+
+    def test_repeated_header_logo_removed(self):
+        logo = (50, 20, 110, 60)
+        chart = (80, 300, 400, 600)
+        pages = [self._page(i, [logo] + ([chart] if i == 2 else []))
+                 for i in range(1, 5)]
+        removed = filter_decorative_images(pages)
+        assert removed == 4  # 4 页各剔除 1 个 Logo
+        for i, p in enumerate(pages, start=1):
+            imgs = [b for b in p.blocks if b.kind == "image"]
+            assert all(tuple(round(v / 5) for v in b.bbox) !=
+                       tuple(round(v / 5) for v in logo) for b in imgs)
+            if i == 2:
+                assert len(imgs) == 1  # 真图表保留
+
+    def test_few_pages_not_filtered(self):
+        """页数不足阈值（<3 页）时不过滤"""
+        logo = (50, 20, 110, 60)
+        pages = [self._page(i, [logo]) for i in range(1, 3)]
+        assert filter_decorative_images(pages) == 0
+
+    def test_single_page_unique_position_kept(self):
+        """只出现一次/两次的图片位置不判定为装饰图"""
+        a, b = (50, 20, 110, 60), (80, 300, 400, 600)
+        pages = [self._page(1, [a, b]), self._page(2, [a]),
+                 self._page(3, [a]), self._page(4, [a])]
+        # a 出现 4 次 → 剔除；b 出现 1 次 → 保留
+        removed = filter_decorative_images(pages)
+        assert removed == 4
+        imgs = [blk for p in pages for blk in p.blocks if blk.kind == "image"]
+        assert len(imgs) == 1 and imgs[0].bbox == b
+
+    def test_end_to_end_figure_nodes(self, tmp_path):
+        """4 页 PDF：每页页眉 Logo + 第 2 页真图表 → figure 节点只剩 1 个"""
+        pdf = tmp_path / "logo.pdf"
+        # 造一张小位图
+        pix = fitz.Pixmap(fitz.csRGB, fitz.IRect(0, 0, 60, 40))
+        pix.clear_with(120)
+        png = pix.tobytes("png")
+        body = "这是正文内容，字数要足够多以避免被分类为扫描件页面。" * 5
+        doc = fitz.open()
+        logo_rect = fitz.Rect(50, 20, 110, 60)
+        chart_rect = fitz.Rect(80, 300, 400, 600)
+        for i in range(4):
+            page = doc.new_page()
+            page.insert_image(logo_rect, stream=png)  # 页眉 Logo
+            # insert_textbox 才会换行，insert_text 会被页宽截断
+            page.insert_textbox(fitz.Rect(72, 100, 540, 280), body,
+                                fontsize=12, fontname="china-s")
+            if i == 1:
+                page.insert_image(chart_rect, stream=png)  # 第 2 页真图表
+        doc.save(str(pdf))
+        doc.close()
+
+        structure = PDFParser().parse_structured(str(pdf))
+        figs = [n for n in structure.nodes if n.kind == "figure"]
+        assert len(figs) == 1 and figs[0].page_start == 2

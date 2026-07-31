@@ -9,6 +9,14 @@
 
 ## [Unreleased]
 
+### Fixed
+- **L2 装饰性图片过滤**：跨页同位置重复图片（页眉 Logo、水印）不再生成
+  figure 节点——bbox 量化到 5pt 网格，在 ≥3 页（或 ≥50% 页面）同位置重复
+  判定为装饰图剔除，真实图表不受影响；实测东莞证券研报剔除 13/22 个
+  页眉 Logo 图像块，视觉理解 API 调用量随之下降
+- **L1 图像块去重**：同一 xref 被多次引用时 `get_image_rects` 兜底路径
+  产生重复图像块（重复 figure 节点 + 重复视觉调用），按量化 bbox 去重
+
 ### Added
 - **PDF 四层架构 P3**（视觉理解 + Agent 工具层 + 分层评测）：
   - `parsers/pdf/vision_extractor.py`：figure 节点按 bbox 区域渲染（200 DPI）

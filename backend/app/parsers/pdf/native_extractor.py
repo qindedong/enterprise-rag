@@ -76,6 +76,19 @@ def extract_page(page, profile: PageProfile) -> PageContent:
         except Exception:
             pass
 
+    # 去重：同一 xref 被多次引用时 get_image_rects 会产生重复图像块，
+    # 重复块会导致重复 figure 节点和重复视觉理解 API 调用
+    seen_img: set[tuple] = set()
+    deduped: list[Block] = []
+    for blk in content.blocks:
+        if blk.kind == "image":
+            key = tuple(round(v, 1) for v in blk.bbox)
+            if key in seen_img:
+                continue
+            seen_img.add(key)
+        deduped.append(blk)
+    content.blocks = deduped
+
     content.blocks.sort(key=lambda blk: (round(blk.y0, 1), round(blk.x0, 1)))
     return content
 

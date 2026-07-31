@@ -102,6 +102,44 @@ def filter_header_footer(pages: list[PageContent]) -> int:
     return removed
 
 
+def filter_decorative_images(pages: list[PageContent]) -> int:
+    """剔除跨页同位置重复的装饰性图片（页眉 Logo、水印等），返回剔除数量
+
+    判定思路与页眉页脚文本过滤一致：图像块的 bbox 量化到 5pt 网格后，
+    在 ≥ MIN_REPEAT_PAGES 个页面（或 ≥50% 页面，取更严格者）的同一
+    位置重复出现 → 判定为装饰图，不生成 figure 节点（也避免每张页眉
+    Logo 都触发一次视觉理解 API 调用）。
+    """
+    if len(pages) < 2:
+        return 0
+
+    def _pos_key(blk) -> tuple:
+        return tuple(round(v / 5) for v in blk.bbox)
+
+    threshold = max(MIN_REPEAT_PAGES, len(pages) // 2)
+    counter: Counter[tuple] = Counter()
+    for p in pages:
+        seen = {_pos_key(b) for b in p.blocks if b.kind == "image"}
+        counter.update(seen)
+
+    decorative = {k for k, c in counter.items() if c >= threshold}
+    if not decorative:
+        return 0
+
+    removed = 0
+    for p in pages:
+        kept = []
+        for blk in p.blocks:
+            if blk.kind == "image" and _pos_key(blk) in decorative:
+                removed += 1
+                continue
+            kept.append(blk)
+        p.blocks = kept
+
+    logger.info(f"装饰图片过滤: 剔除 {removed} 个图像块（{len(decorative)} 种位置）")
+    return removed
+
+
 def reorder_columns(page: PageContent) -> None:
     """多栏重组：检测左右分栏并按栏重排块顺序（原地修改）
 
@@ -231,6 +269,8 @@ def build_structure(
     """
     # 1. 页眉页脚过滤
     filter_header_footer(pages)
+    # 1.5 装饰性图片过滤（跨页同位置重复的页眉 Logo / 水印）
+    filter_decorative_images(pages)
     # 2. 多栏重组
     for p in pages:
         reorder_columns(p)
